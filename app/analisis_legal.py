@@ -1,7 +1,7 @@
 import os
-import openai
+from openai import OpenAI
 
-openai.api_key = os.getenv("OPENAI_API_KEY")
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 def generar_analisis(nombre, datos):
     prompt = f"""
@@ -11,7 +11,7 @@ def generar_analisis(nombre, datos):
     Detecta vacíos legales y propón cómo abordarlos con medidas técnicas y legales.
     """
     try:
-        response = openai.ChatCompletion.create(
+        response = client.chat.completions.create(
             model="gpt-4",
             messages=[
                 {"role": "system", "content": "Eres un asesor legal y ambiental experto en minería."},
@@ -19,7 +19,6 @@ def generar_analisis(nombre, datos):
             ],
             temperature=0.7
         )
-        return response["choices"][0]["message"]["content"]
+        return response.choices[0].message.content
     except Exception as e:
         return f"Error al generar análisis: {str(e)}"
-
