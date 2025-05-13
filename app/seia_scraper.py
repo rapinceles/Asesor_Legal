@@ -42,3 +42,4 @@ def buscar_empresa(nombre_empresa):
             })
 
     return {"empresa": nombre_empresa, "proyectos": proyectos}
+
