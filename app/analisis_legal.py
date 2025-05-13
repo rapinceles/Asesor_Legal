@@ -12,7 +12,7 @@ def generar_analisis(nombre, datos):
     """
     try:
         response = client.chat.completions.create(
-            model="gpt-4",
+            model="gpt-3.5-turbo",
             messages=[
                 {"role": "system", "content": "Eres un asesor legal y ambiental experto en minería."},
                 {"role": "user", "content": prompt}
