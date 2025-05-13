@@ -10,9 +10,16 @@ def generar_analisis(nombre, datos):
     Identifica normas legales aplicables (ambientales, civiles, penales, administrativas, económicas, etc.).
     Detecta vacíos legales y propón cómo abordarlos con medidas técnicas y legales.
     """
-    response = openai.ChatCompletion.create(
-        model="gpt-4",
-        messages=[{"role": "user", "content": prompt}],
-        temperature=0.7
-    )
-    return response.choices[0]["message"]["content"]
+    try:
+        response = openai.ChatCompletion.create(
+            model="gpt-4",
+            messages=[
+                {"role": "system", "content": "Eres un asesor legal y ambiental experto en minería."},
+                {"role": "user", "content": prompt}
+            ],
+            temperature=0.7
+        )
+        return response["choices"][0]["message"]["content"]
+    except Exception as e:
+        return f"Error al generar análisis: {str(e)}"
+
