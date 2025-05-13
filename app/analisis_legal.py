@@ -12,6 +12,7 @@ def generar_analisis(nombre, datos):
     """
     response = openai.ChatCompletion.create(
         model="gpt-4",
-        messages=[{"role": "user", "content": prompt}]
+        messages=[{"role": "user", "content": prompt}],
+        temperature=0.7
     )
-    return response.choices[0].message["content"]
+    return response.choices[0]["message"]["content"]
