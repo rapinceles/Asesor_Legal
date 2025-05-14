@@ -16,7 +16,6 @@ Datos extraídos del SEIA:
 
 Proporciona un análisis claro, técnico y con recomendaciones legales específicas.
 """
-
         respuesta = client.chat.completions.create(
             model="gpt-4",
             messages=[
@@ -27,6 +26,5 @@ Proporciona un análisis claro, técnico y con recomendaciones legales específi
         )
 
         return respuesta.choices[0].message.content.strip()
-    
     except Exception as e:
         return f"Error al generar análisis: {str(e)}"
