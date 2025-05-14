@@ -6,21 +6,21 @@ client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 def generar_analisis(nombre_empresa, datos_empresa, pregunta_usuario="", tipo_asesor=""):
     try:
         contexto = f"""
-Eres un asesor legal ambiental experto en normativa chilena. Analiza la situación de la empresa "{nombre_empresa}".
+Eres un asesor legal ambiental experto en normativa chilena. Analiza la situación de la empresa '{nombre_empresa}'.
 
 Tipo de asesor: {tipo_asesor}
-Consulta específica: {pregunta_usuario}
+Consulta del usuario: {pregunta_usuario}
 
-Datos del SEIA:
+Datos extraídos del SEIA:
 {datos_empresa}
 
-Proporciona un análisis técnico, claro y con recomendaciones legales aplicables.
+Entrega un análisis claro, técnico y con recomendaciones legales específicas.
 """
 
         respuesta = client.chat.completions.create(
-            model="gpt-4-1106-preview",  # Usa el modelo correcto según tu cuenta
+            model="gpt-4-1106-preview",  # Este es el modelo correcto
             messages=[
-                {"role": "system", "content": "Eres un asesor legal ambiental experto en normativa chilena."},
+                {"role": "system", "content": "Eres un asesor legal experto en normativa ambiental chilena."},
                 {"role": "user", "content": contexto}
             ],
             temperature=0.5
