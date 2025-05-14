@@ -1,1 +1,144 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ASESOR LEGAL AMBIENTAL</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background-image: url('/static/fondo.jpg');
+      background-size: cover;
+      background-position: center;
+    }
+    .container {
+      background-color: rgba(255, 255, 255, 0.95);
+      margin: 5% auto;
+      padding: 40px;
+      max-width: 900px;
+      border-radius: 10px;
+    }
+    h1 {
+      text-align: center;
+      color: #003366;
+      margin-bottom: 30px;
+    }
+    label {
+      font-weight: bold;
+      margin-bottom: 8px;
+      display: block;
+      color: #333;
+    }
+    input[type="text"], select, input[type="file"] {
+      width: 100%;
+      padding: 12px;
+      font-size: 16px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      margin-bottom: 20px;
+    }
+    .form-row {
+      display: flex;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+    .form-group {
+      flex: 1;
+    }
+    .button-container {
+      text-align: center;
+      margin-top: 20px;
+    }
+    .button-container button {
+      background-color: #0078d4;
+      color: white;
+      padding: 15px 30px;
+      font-size: 18px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    .button-container button:hover {
+      background-color: #005ea8;
+    }
+    #resultado {
+      margin-top: 30px;
+      display: none;
+    }
+    #respuestaAI {
+      background-color: #f0f8ff;
+      border-left: 6px solid #0078d4;
+      padding: 20px;
+      border-radius: 6px;
+      white-space: pre-wrap;
+      color: #222;
+      font-size: 16px;
+      line-height: 1.6;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>ASESOR LEGAL AMBIENTAL</h1>
+    <form id="formulario" enctype="multipart/form-data">
+      <label for="analisis">Análisis a realizar</label>
+      <input type="text" id="analisis" name="analisis" placeholder="Escriba la pregunta o análisis aquí..." required />
 
+      <div class="form-row">
+        <div class="form-group">
+          <label for="empresa">Nombre de la empresa</label>
+          <input type="text" id="empresa" name="empresa" placeholder="Ej: Atacama Kozan" required />
+        </div>
+        <div class="form-group">
+          <label for="sector">Tipo de asesor</label>
+          <select id="sector" name="sector">
+            <option value="">Seleccionar tipo...</option>
+            <option value="legal">Legal</option>
+            <option value="ambiental">Ambiental</option>
+            <option value="administrativo">Administrativo</option>
+          </select>
+        </div>
+      </div>
+
+      <label for="documentos">Documentos complementarios</label>
+      <input type="file" id="documentos" name="documentos" multiple />
+
+      <div class="button-container">
+        <button type="submit">Analizar</button>
+      </div>
+    </form>
+
+    <div id="resultado">
+      <h2 style="color: #003366;">Resultado del análisis</h2>
+      <div id="respuestaAI"></div>
+    </div>
+  </div>
+
+  <script>
+    document.getElementById("formulario").addEventListener("submit", async function(event) {
+      event.preventDefault();
+
+      const form = document.getElementById("formulario");
+      const formData = new FormData(form);
+      const respuestaAI = document.getElementById("respuestaAI");
+      const resultadoDiv = document.getElementById("resultado");
+
+      respuestaAI.innerText = "Procesando análisis...";
+      resultadoDiv.style.display = "block";
+
+      try {
+        const response = await fetch("/analizar_formulario", {
+          method: "POST",
+          body: formData
+        });
+
+        const texto = await response.text();
+        respuestaAI.innerText = texto;
+      } catch (err) {
+        respuestaAI.innerText = "Error al obtener resultado: " + err.message;
+      }
+    });
+  </script>
+</body>
+</html>
