@@ -12,18 +12,19 @@ Eres un asesor experto en temas {tipo_asesor.lower()} y ambientales. Evalúa la 
 
 Pregunta o análisis solicitado: "{pregunta_usuario}"
 
-Entrega un análisis claro y legalmente fundamentado.
+Entrega un análisis claro, legalmente fundamentado y con lenguaje técnico apropiado.
 """
 
-        response = client.chat.completions.create(
-            model="gpt-4",  # Puedes cambiar a gpt-3.5-turbo si no tienes acceso
+        respuesta = client.chat.completions.create(
+            model="gpt-4",
             messages=[
-                {"role": "system", "content": "Eres un experto legal ambiental."},
+                {"role": "system", "content": "Eres un asesor legal ambiental experto en normativa chilena."},
                 {"role": "user", "content": contexto}
             ],
             temperature=0.3
         )
-        return response.choices[0].message.content
+
+        return respuesta.choices[0].message.content.strip()
 
     except Exception as e:
         return f"Error al generar análisis: {e}"
