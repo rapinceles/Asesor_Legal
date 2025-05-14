@@ -96,7 +96,7 @@
             <option value="">Seleccionar tipo...</option>
             <option value="legal">Legal</option>
             <option value="ambiental">Ambiental</option>
-            <option value="administrativo">Administrativo</option>
+            <option value="administrativo">Tecnico ingenieria</option>
           </select>
         </div>
       </div>
@@ -128,7 +128,7 @@
       resultadoDiv.style.display = "block";
 
       try {
-        const response = await fetch("/analizar_formulario", {
+        const response = await fetch("/analizar_formulario/", {
           method: "POST",
           body: formData
         });
