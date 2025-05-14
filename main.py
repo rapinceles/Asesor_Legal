@@ -34,7 +34,7 @@ async def render_form(request: Request):
 
 
 # Ruta para recibir y procesar formulario
-@app.post("/analizar-formulario/")
+@app.post("/analizar_formulario/")
 async def analizar_formulario(
     analisis: str = Form(...),
     empresa: str = Form(...),
