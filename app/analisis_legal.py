@@ -14,19 +14,19 @@ Consulta del usuario: {pregunta_usuario}
 Datos extraídos del SEIA:
 {datos_empresa}
 
-Entrega un análisis claro, técnico y con recomendaciones legales específicas.
+Proporciona un análisis claro, técnico y con recomendaciones legales específicas.
 """
 
         respuesta = client.chat.completions.create(
-            model="gpt-4-1106-preview",  # Este es el modelo correcto
+            model="gpt-4",
             messages=[
-                {"role": "system", "content": "Eres un asesor legal experto en normativa ambiental chilena."},
+                {"role": "system", "content": "Eres un asesor experto en normativa ambiental chilena."},
                 {"role": "user", "content": contexto}
             ],
             temperature=0.5
         )
 
         return respuesta.choices[0].message.content.strip()
-
+    
     except Exception as e:
         return f"Error al generar análisis: {str(e)}"
