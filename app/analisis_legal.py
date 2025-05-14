@@ -1,35 +1,29 @@
-from openai import OpenAI
 import os
+import openai
 
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
-def generar_analisis(nombre_empresa, datos, pregunta=""):
-    proyectos = datos.get("proyectos", [])
-    if not proyectos:
-        return "No se encontraron proyectos para esta empresa en el SEIA."
-
-    descripcion = f"Empresa: {nombre_empresa}\n\n"
-    for p in proyectos:
-        for k, v in p.items():
-            descripcion += f"{k.capitalize()}: {v}\n"
-        descripcion += "\n"
-
-    prompt = f"""Eres un asesor legal ambiental en Chile. Analiza la siguiente información del SEIA sobre la empresa "{nombre_empresa}" y responde a la consulta: {pregunta}
-
-    Información:
-    {descripcion}
-
-    Análisis:
-    """
-
+def generar_analisis(nombre_empresa, datos_empresa, pregunta_usuario="", tipo_asesor=""):
     try:
+        contexto = f"""
+Eres un asesor experto en temas {tipo_asesor.lower()} y ambientales. Evalúa la empresa "{nombre_empresa}" considerando estos datos extraídos del SEIA:
+
+{datos_empresa}
+
+Pregunta o análisis solicitado: "{pregunta_usuario}"
+
+Entrega un análisis claro y legalmente fundamentado.
+"""
+
         response = client.chat.completions.create(
-            model="gpt-4",
+            model="gpt-4",  # Puedes cambiar a gpt-3.5-turbo si no tienes acceso
             messages=[
-                {"role": "system", "content": "Eres un experto en normativa ambiental chilena."},
-                {"role": "user", "content": prompt}
-            ]
+                {"role": "system", "content": "Eres un experto legal ambiental."},
+                {"role": "user", "content": contexto}
+            ],
+            temperature=0.3
         )
         return response.choices[0].message.content
+
     except Exception as e:
         return f"Error al generar análisis: {e}"
