@@ -1,24 +1,39 @@
-import os
-from openai import OpenAI
+import openai
+import json
 
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
-
-def generar_analisis(nombre, datos):
-    prompt = f"""
-    Analiza la empresa {nombre} en el contexto del SEIA.
-    Tiene proyectos como: {datos['proyectos']} en la región {datos['region']} (sector {datos['sector']}).
-    Identifica normas legales aplicables (ambientales, civiles, penales, administrativas, económicas, etc.).
-    Detecta vacíos legales y propón cómo abordarlos con medidas técnicas y legales.
-    """
+def generar_analisis(nombre_empresa, datos_seia):
     try:
-        response = client.chat.completions.create(
+        if not datos_seia.get("proyectos"):
+            return "No se encontraron proyectos para esta empresa en el SEIA."
+
+        proyectos_texto = json.dumps(datos_seia["proyectos"], ensure_ascii=False, indent=2)
+
+        prompt = f"""
+Eres un asesor legal y técnico ambiental chileno con experiencia en evaluación ambiental (SEIA), organismos sectoriales y normativa. 
+Analiza la siguiente empresa y sus proyectos en el SEIA:
+
+Nombre empresa: {nombre_empresa}
+
+Proyectos:
+{proyectos_texto}
+
+Entrega:
+1. Normativa aplicable.
+2. Organismos evaluadores involucrados.
+3. Riesgos técnicos comunes.
+4. Recomendaciones para el cumplimiento legal y ambiental.
+"""
+
+        response = openai.ChatCompletion.create(
             model="gpt-3.5-turbo",
             messages=[
-                {"role": "system", "content": "Eres un asesor legal y ambiental experto en minería."},
+                {"role": "system", "content": "Eres un asesor legal ambiental experto."},
                 {"role": "user", "content": prompt}
             ],
-            temperature=0.7
+            temperature=0.5
         )
-        return response.choices[0].message.content
+
+        return response.choices[0].message["content"]
+
     except Exception as e:
         return f"Error al generar análisis: {str(e)}"
