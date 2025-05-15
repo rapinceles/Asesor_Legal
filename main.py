@@ -2,7 +2,7 @@ from fastapi import FastAPI, Form, UploadFile, File, Request
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from fastapi.responses import HTMLResponse, Response # Importar Response
+from fastapi.responses import HTMLResponse, Response
 from typing import List # Asegúrate de importar List
 import openai
 import os # Importar os para acceder a variables de entorno
@@ -19,42 +19,43 @@ app = FastAPI()
 app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="static") # Asumiendo que tus plantillas estan en una carpeta 'static'
 
-
 # Configurar la clave de la API de OpenAI
-# Es crucial que la variable de entorno OPENAI_API_KEY este configurada en Render
-# openai.api_key = os.getenv("OPENAI_API_KEY") # Esta forma de configurar es para openai<1.0.0
 # Para openai>=1.0.0, la variable OPENAI_API_KEY debe estar en el entorno, y la librería la detecta
-# automaticamente o puedes pasarla al instanciar OpenAI()
+# automaticamente al instanciar OpenAI() o al hacer la llamada si la variable esta seteada globalmente.
+# No necesitas setear openai.api_key = os.getenv("OPENAI_API_KEY") para versiones >= 1.0.0
 
 
 # Ruta raiz que carga la interfaz visual
 @app.get("/", response_class=HTMLResponse)
 async def render_form(request: Request):
-    return templates.TemplateResponse("index.html", {"request": request}) # Asegúrate de que index.html este en 'static'
+    # Asegúrate de que index.html este en la carpeta 'static'
+    return templates.TemplateResponse("index.html", {"request": request})
 
 
 # Ruta para recibir y procesar formulario
-@app.post("/analizar_formulario/")
+# Nota: La URL en el fetch de index.html DEBE ser exactamente "/analizar-formulario/"
+@app.post("/analizar-formulario/")
 async def analizar_formulario(
     analisis: str = Form(...),
     empresa: str = Form(...),
-    sector: str = Form(...), # Usaste sector en el prompt, asi que lo mantengo aqui
+    sector: str = Form(...),
     documentos: List[UploadFile] = File(default=None) # Usar List[UploadFile] para multiples archivos
 ):
     # Buscar proyectos reales en el SEIA
-    datos_seia = buscar_empresa(empresa) # Asegúrate que buscar_empresa este definida o importada
+    # Asegúrate que buscar_empresa este definida o importada y funcione correctamente
+    datos_seia = buscar_empresa(empresa)
 
     # Procesar documentos subidos
     contenidos = []
     if documentos:
         for doc in documentos:
             # Manejar si no se suben archivos o si hay error al leer
+            # doc.filename == '' ocurre si el campo file esta en el form pero no se selecciona archivo
             if doc.filename == '':
-                 continue # Saltar si el campo de archivo está vacío pero se envió el formulario
+                 continue
 
             try:
-                # Leer el contenido del archivo. Asumimos texto, ajusta si son PDFs, etc.
-                # Render y Uvicorn manejan async, usa await doc.read()
+                # Leer el contenido del archivo de forma asíncrona
                 contenido_bytes = await doc.read()
                 # Intenta decodificar, manejando posibles errores de codificación
                 try:
@@ -64,7 +65,7 @@ async def analizar_formulario(
                          # Intentar otra codificacion si utf-8 falla
                          contenido = contenido_bytes.decode('latin-1')
                     except Exception:
-                         contenido = "Error al decodificar el archivo." # Mensaje si falla la decodificacion
+                         contenido = f"Error al decodificar el archivo {doc.filename}." # Mensaje si falla la decodificacion
 
                 contenidos.append(contenido)
             except Exception as e:
@@ -74,53 +75,71 @@ async def analizar_formulario(
 
     texto_docs = "\n\n".join(contenidos) if contenidos else "Sin documentos adjuntos."
 
-    # Construir prompt para GPT
-    prompt = f"""
-    Prompt de análisis legal ambiental:
+    # --- Construir el prompt MEJORADO para GPT ---
 
-    Empresa: {empresa}
-    Tipo de asesor: {sector}
-    Consulta: {analisis}
-
-    Proyectos en SEIA:
-    {datos_seia.get('proyectos', 'No se encontraron proyectos en SEIA.')} # Usar .get por si la clave no existe
-
-    Contenido adicional (Documentos Adjuntos):
-    {texto_docs}
-
-    Entrega un análisis técnico y legal aplicable, citando normativas ambientales, recomendaciones y
-    evaluación de riesgos, basándote en la información proporcionada, los proyectos encontrados en SEIA y los documentos adjuntos.
-    """ # Asegúrate de cerrar las triples comillas del f-string aquí
+    # Instanciar el cliente de OpenAI (recomendado para versiones >= 1.0.0)
+    # La librería leerá OPENAI_API_KEY del entorno automáticamente
+    client = openai.OpenAI()
 
     try:
-        # --- Inicio de la corrección en la llamada a OpenAI ---
-        # Si usas openai>=1.0.0, la API key se debe configurar en el entorno
-        # La librería la detecta automáticamente o puedes instanciar el cliente:
-        # client = openai.OpenAI() # Opcional: Instanciar el cliente
-        # response = client.chat.completions.create( # Usar la nueva sintaxis con el cliente
-
-        # O, si la API key esta en el entorno, puedes usar la llamada directa asi:
-        response = openai.chat.completions.create( # <-- ¡Llamada corregida!
-             model="gpt-3.5-turbo", # o "gpt-4" si lo tienes disponible
+        response = client.chat.completions.create( # Usar la nueva sintaxis con el cliente
+             model="gpt-3.5-turbo", # Puedes cambiar a "gpt-4" si lo necesitas y tienes acceso
              messages=[
-                 {"role": "system", "content": "Eres un asesor experto en normativa ambiental, legal, técnica y de riesgo en Chile. Tu objetivo es proporcionar un análisis detallado, citando fuentes legales relevantes cuando sea posible, y ofreciendo recomendaciones prácticas y evaluación de riesgos."}, # Prompt de sistema mejorado
-                 {"role": "user", "content": prompt} # Usamos el prompt construido arriba
+                 # Prompt del sistema: Define el rol, tono y expectativas generales de FORMATO y CONTENIDO
+                 {"role": "system", "content": """Eres un asesor experto en normativa ambiental, legal, técnica y de riesgo en Chile.
+Tu objetivo es proporcionar un análisis **detallado, estructurado, profesional y preciso** sobre la consulta del usuario, basándote en toda la información proporcionada.
+
+Directrices para la respuesta:
+1.  **Estructura:** Divide la respuesta en secciones claras usando encabezados (ej: 1. Normativa Aplicable, 2. Análisis Técnico/Situacional, 3. Evaluación de Riesgos, 4. Recomendaciones).
+2.  **Contenido Técnico/Legal:** Profundiza en los aspectos técnicos y legales relevantes.
+3.  **Citación:** Siempre que sea posible y relevante, **cita explícitamente la normativa ambiental y legal chilena aplicable** (ej: Ley N° 19.300, D.S. N° 40/2012 RCA, D.S. N° 90/2000 Norma de Emisión, Código de Aguas, etc.). No inventes citas; indica las normativas generales o principios si no puedes citar un artículo específico relevante de tu conocimiento.
+4.  **Riesgos:** Identifica y describe claramente los **riesgos** técnicos, legales y operacionales asociados a la consulta o la situación de la empresa.
+5.  **Recomendaciones:** Formula **recomendaciones concretas, prácticas y aplicables** que la empresa pueda seguir.
+6.  **Formato:** Usa **viñetas** dentro de las secciones para listar puntos clave (normas, riesgos, recomendaciones específicas). Asegúrate de que el texto sea legible y bien organizado.
+7.  **Idioma:** Responde siempre en español de Chile.
+"""},
+                 # Prompt del usuario: Contiene la información específica de la consulta y los datos de entrada
+                 {"role": "user", "content": f"""
+Por favor, realiza el análisis técnico y legal solicitado basándote en la siguiente información:
+
+Información de la Empresa:
+Nombre: {empresa}
+Tipo de asesor solicitado: {sector}
+
+Consulta específica a analizar:
+{analisis}
+
+Información relevante extraída del SEIA:
+{datos_seia.get('proyectos', 'No se encontraron proyectos en SEIA relevantes para esta empresa en el SEIA.')}
+
+Contenido de los Documentos Adjuntos (si fueron proporcionados):
+{texto_docs}
+
+Genera el análisis siguiendo estrictamente las directrices de estructura, contenido técnico/legal, citación, riesgos y recomendaciones detalladas en tus instrucciones de sistema. Asegúrate de que sea un análisis profundo y aplicable al contexto chileno.
+"""}
              ],
-             temperature=0.6
+             temperature=0.7 # Un poco mas alto que 0.6 para fomentar creatividad, pero no demasiado
          )
-        # --- Fin de la corrección ---
 
-        # Asumiendo que la respuesta es texto
-        # return response.choices[0].message.content # Esto devuelve solo el texto
-        # Podrias querer devolverlo como HTMLResponse para mostrarlo en la interfaz
-        # return HTMLResponse(content=response.choices[0].message.content)
-        # O simplemente devolver el texto y que el frontend lo maneje
-        return response.choices[0].message.content
+        # Asumiendo que la respuesta es texto en el primer choice
+        respuesta_texto = response.choices[0].message.content
+
+        # Puedes añadir aquí un paso para post-procesar el texto si el formato no es perfecto
+        # Por ejemplo, si quieres convertir Markdown simple a HTML (requiere una lib como markdown)
+        # import markdown
+        # respuesta_html = markdown.markdown(respuesta_texto)
+        # return HTMLResponse(content=respuesta_html)
+
+        # Si simplemente quieres el texto con saltos de linea basicos (usando pre-wrap en el frontend)
+        return respuesta_texto
 
 
+    except openai.APIError as e:
+        # Manejar errores específicos de la API de OpenAI
+        print(f"Error de la API de OpenAI: {e}")
+        return f"Error de la API de OpenAI: {e}"
     except Exception as e:
-        # Capturar y devolver el error como texto
-        # Ahora este mensaje de error deberia ser diferente si la correccion funciona
-        print(f"Error detallado en la llamada a OpenAI: {e}") # Opcional: imprimir el error en los logs de Render para debug
+        # Capturar cualquier otro error y devolverlo como texto
+        print(f"Error general al generar análisis: {e}") # Imprimir el error en los logs de Render
         return f"Error al generar análisis: {str(e)}"
 
