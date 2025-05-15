@@ -1,200 +1,242 @@
+# app/seia_scraper.py
 import requests
 from bs4 import BeautifulSoup
-import time # Importar time para posibles pausas entre solicitudes
+import time
+import re # Importar re para usar expresiones regulares si es necesario
 
-# URL para la busqueda inicial de proyectos
 BUSQUEDA_PROYECTO_URL = "https://seia.sea.gob.cl/busqueda/buscarProyectoAction.php"
-# Base URL del SEIA, necesaria para construir URLs completas si los enlaces son relativos
 BASE_SEIA_URL = "https://seia.sea.gob.cl"
 
-# Función auxiliar para raspar los datos de las RCA desde la página de detalle de un proyecto
-def _scrape_rcas_from_project_page(project_url: str) -> list:
-    """
-    Raspa la página de detalle de un proyecto del SEIA para extraer la información de las RCA.
-    """
-    rcas_encontradas = []
-    full_project_url = project_url # Asumimos que la URL del proyecto ya es completa
 
-    # Si el enlace del proyecto en la tabla de busqueda fuera relativo, construir la URL completa:
-    # if project_url.startswith('/'):
-    #     full_project_url = BASE_SEIA_URL + project_url
-    # else:
-    #     full_project_url = project_url # O manejar otros casos
+# --- FUNCIÓN AUXILIAR para raspar la tabla de documentos del expediente ---
+# ESTA FUNCIÓN REQUIERE AJUSTES FINOS DE SELECTORES BASADOS EN EL HTML REAL
+def _scrape_expediente_documents(expediente_url: str) -> list:
+    """
+    Raspa la página expedienteEvaluacion.php para extraer información de los documentos,
+    identificando especialmente las RCAs.
+    """
+    documentos_encontrados = []
+    full_expediente_url = expediente_url
 
-    print(f"Scraping RCA de: {full_project_url}") # Log para ver a que URL estamos yendo
+    print(f"Scraping documentos del expediente desde: {full_expediente_url}")
 
     try:
-        # Realizar la solicitud GET a la página de detalle del proyecto
-        # Aumentar timeout por si la pagina tarda en cargar
-        response = requests.get(full_project_url, timeout=20)
-        response.raise_for_status() # Lanzar excepcion para códigos de estado de error (4xx o 5xx)
+        response = requests.get(full_expediente_url, timeout=20)
+        response.raise_for_status() # Lanzar excepción para códigos de estado de error
 
         soup = BeautifulSoup(response.content, 'html.parser')
 
-        # --- PARTE CRUCIAL: Localizar la tabla o sección de RCA ---
-        # ESTO REQUIERE INSPECCIONAR EL HTML DE UNA PAGINA DE PROYECTO REAL
-        # POSIBLES SELECTORES (NECESITA AJUSTE):
-        # - Una tabla con un ID específico: rca_table = soup.find('table', id='tablaRcas')
-        # - Una tabla con una clase específica: rca_table = soup.find('table', class_='tablaRCA')
-        # - Una tabla que esté después de un encabezado específico (ej. <h2>Resoluciones</h2>)
+        # --- LOCALIZAR LA TABLA PRINCIPAL DE DOCUMENTOS EN expedienteEvaluacion.php ---
+        # Basado en las capturas, parece ser una tabla con class='tabla'
+        # AJUSTA ESTE SELECTOR SI ES NECESARIO para encontrar la tabla correcta
+        # Podria ser soup.find('table', {'class': 'tabla'}) o un selector CSS mas especifico
+        document_table = soup.find('table', class_='tabla')
 
-        # Ejemplo hipotético: buscar una tabla con una clase 'tablaRCA'
-        rca_table = soup.find('table', class_='tabla') # Usamos 'tabla' como en la busqueda, podria ser diferente
-        # Si la tabla de RCA tiene una estructura diferente, ajusta el selector
-        # rca_table = soup.select_one('selector_css_correcto_aqui')
 
-        if rca_table:
-            # Asumimos que las filas de RCA son <tr> dentro del <tbody> (excluyendo thead si existe)
-            # Podria ser necesario ajustar el selector de filas si la estructura es diferente
-            rca_rows = rca_table.find_all('tr')[1:] # Saltar la fila de encabezado si la hay
+        if not document_table:
+            print("Tabla de documentos del expediente no encontrada.")
+            return []
 
-            print(f"Filas de RCA encontradas: {len(rca_rows)}") # Log
 
-            for row in rca_rows:
-                # Asumimos que las columnas de la RCA son <td>
-                columns = row.find_all(['td', 'th']) # A veces thead tiene th, tbody tiene td
-
-                if len(columns) >= 4: # Asegurarse de que hay suficientes columnas
-                    try:
-                        # --- EXTRACCION DE DATOS DE COLUMNAS (NECESITA AJUSTE) ---
-                        # Asumimos un orden de columnas basico: N° RCA, Fecha, Tipo, Link
-                        # Tienes que inspeccionar la pagina real para saber que columna es cual (indice 0, 1, 2, ...)
-                        numero_rca = columns[0].get_text(strip=True)
-                        fecha_rca = columns[1].get_text(strip=True)
-                        tipo_rca = columns[2].get_text(strip=True)
-                        # Intentar encontrar el enlace al documento si existe en alguna columna
-                        link_elemento = columns[3].find('a', href=True) # Asumimos el link esta en la 4ta columna
-                        link_rca = BASE_SEIA_URL + link_elemento['href'] if link_elemento else "No disponible"
-
-                        rcas_encontradas.append({
-                            "numero_rca": numero_rca,
-                            "fecha": fecha_rca,
-                            "tipo": tipo_rca,
-                            "link_documento": link_rca
-                        })
-                    except IndexError as ie:
-                         print(f"Error de indice al procesar fila RCA: {ie} - Fila: {row}")
-                    except Exception as ex:
-                         print(f"Error al extraer datos de fila RCA: {ex} - Fila: {row}")
+        # Asumimos que las filas de documentos son <tr> dentro del <tbody> (excluyendo thead)
+        # AJUSTA ESTO si la estructura es diferente
+        document_rows = document_table.find_all('tr')
+        if len(document_rows) > 1:
+            document_rows = document_rows[1:] # Saltar la fila de encabezado si existe
         else:
-            print("Tabla de RCA no encontrada en la página del proyecto con el selector asumido.") # Log
+             print("Tabla de documentos vacía o solo con encabezado.")
+             return []
+
+
+        print(f"Filas de documentos encontradas: {len(document_rows)}")
+
+        # Iterar sobre las filas de la tabla de documentos
+        for i, row in enumerate(document_rows):
+             # Asumimos que las columnas son <td>
+             columns = row.find_all(['td', 'th'])
+
+             # --- EXTRACCION DE DATOS DE COLUMNAS DE DOCUMENTO (AJUSTA INDICES) ---
+             # Asegurarse de que hay suficientes columnas ANTES de intentar acceder a ellas
+             # Los indices [0], [1], etc. dependen del orden REAL de las columnas en la tabla.
+             # Basado en las capturas, parece haber al menos 5 columnas relevantes al inicio.
+             if len(columns) >= 5:
+                 try:
+                     # Extraer texto y enlaces. AJUSTA LOS INDICES [0], [1], [2], etc.
+                     folio = columns[0].get_text(strip=True) if len(columns) > 0 else "N/A"
+                     documento_texto = columns[1].get_text(strip=True) if len(columns) > 1 else "N/A"
+                     emitido_por = columns[2].get_text(strip=True) if len(columns) > 2 else "N/A"
+                     destinado_a = columns[3].get_text(strip=True) if len(columns) > 3 else "N/A"
+                     fecha = columns[4].get_text(strip=True) if len(columns) > 4 else "N/A" # Puede ser fecha de recepcion o similar
+
+                     # --- IDENTIFICAR SI ES UNA RCA Y EXTRAER EL ENLACE PDF ---
+                     # Busca si el texto del documento indica que es una RCA. AJUSTA EL TEXTO A BUSCAR.
+                     is_rca = "resolución de calificación ambiental" in documento_texto.lower() or \
+                              "rca n°" in documento_texto.lower() # Ejemplo: buscar N° RCA tambien
+
+                     link_documento = None
+                     # Busca el enlace (<a> tag) dentro de la columna "Documento" (indice 1)
+                     if len(columns) > 1:
+                        link_elemento = columns[1].find('a', href=True)
+
+                        if link_elemento:
+                            href = link_elemento['href']
+                            # Construir URL completa si es relativa y verificar si es un PDF (opcional)
+                            if href.startswith('/'):
+                                full_href = BASE_SEIA_URL + href
+                            else:
+                                full_href = href # Ya es una URL completa
+
+                            # Opcional: Puedes añadir una verificación si el enlace apunta a un PDF
+                            # if full_href.lower().endswith('.pdf'):
+                            link_documento = full_href
+                            # else:
+                            #     print(f"Enlace encontrado no parece un PDF para {documento_texto}: {full_href}") # Log
+
+                     # Solo añadimos el documento si logramos identificarlo como una RCA
+                     if is_rca:
+                         documentos_encontrados.append({
+                             "folio": folio,
+                             "documento_tipo": documento_texto,
+                             "emitido_por": emitido_por,
+                             "destinado_a": destinado_a,
+                             "fecha": fecha,
+                             "link_pdf": link_documento if link_documento else "No disponible",
+                             "fuente_expediente": full_expediente_url # Opcional: URL del expediente
+                         })
+                     # O podrías añadir todos los documentos si el modelo necesita ver el expediente completo
+                     # else:
+                     #     # Añadir otros documentos aunque no sean RCA si es util para el analisis
+                     #     documentos_encontrados.append({
+                     #         "folio": folio, "documento_tipo": documento_texto, "fecha": fecha,
+                     #         "link_pdf": link_documento if link_documento else "No disponible", "es_rca": False
+                     #     })
+
+
+                 except IndexError as ie:
+                      print(f"Error de indice al procesar fila de documento {i}: {ie}")
+                 except Exception as ex:
+                      print(f"Error al extraer datos de fila de documento {i}: {ex}")
+             else:
+                  print(f"Fila de documento {i} no tiene suficientes columnas (esperadas >=5).")
+
 
     except requests.exceptions.RequestException as e:
-        print(f"Error al acceder a la página del proyecto {full_project_url}: {e}")
+        print(f"Error al acceder a la página del expediente {full_expediente_url}: {e}")
+        return []
     except Exception as e:
-        print(f"Error al parsear la página del proyecto {full_project_url}: {e}")
+        print(f"Error general al raspar documentos del expediente {full_expediente_url}: {e}")
+        return []
 
-    return rcas_encontradas
+    print(f"Raspado de documentos del expediente completado. Documentos (posibles RCAs) identificados: {len(documentos_encontrados)}")
+    return documentos_encontrados
 
-# Función principal para buscar proyectos y sus RCAs
-def buscar_empresa(nombre_empresa: str) -> dict:
+
+# --- FUNCIÓN PRINCIPAL: buscar_empresa ---
+# Busca proyectos en la busqueda inicial y luego raspa sus documentos de expediente
+def buscar_empresa(nombre_empresa: str) -> list: # Retorna una lista de proyectos, cada uno con sus documentos/RCAs
     """
-    Busca proyectos en el SEIA por nombre y, si encuentra, intenta raspar sus RCA.
+    Busca proyectos en el SEIA por nombre, obtiene el enlace al expediente y raspa sus documentos/RCAs.
+    Retorna una lista de diccionarios de proyecto.
     """
     proyectos_encontrados = []
     search_url = BUSQUEDA_PROYECTO_URL
 
     payload = {
         "NOMBRE_EMPRESA": nombre_empresa,
-        "TIPO_PROYECTO": "", # Dejar vacio o usar valor del formulario si aplica
-        "REGION": "",       # Dejar vacio
-        "ESTADO": "",       # Dejar vacio
-        "EVALUACION": "",   # Dejar vacio
-        "RCA": "",          # Dejar vacio
-        "CODIGO": "",       # Dejar vacio
+        "TIPO_PROYECTO": "",
+        "REGION": "",
+        "ESTADO": "",
+        "EVALUACION": "",
+        "RCA": "",
+        "CODIGO": "",
         "submit": "Buscar"
     }
 
     headers = {
-        "User-Agent": "Mozilla/5.0"
+        "User-Agent": "Mozilla/5.0" # Es bueno simular un navegador
     }
 
-    print(f"Buscando proyectos para: {nombre_empresa}") # Log
+    print(f"Buscando proyectos para: {nombre_empresa} en {search_url}")
 
     try:
-        response = requests.post(search_url, data=payload, headers=headers, timeout=10)
-        response.raise_for_status() # Lanzar excepcion para códigos de estado de error (4xx o 5xx)
+        response = requests.post(search_url, data=payload, headers=headers, timeout=15)
+        response.raise_for_status()
 
         soup = BeautifulSoup(response.content, 'html.parser')
 
-        # --- PARTE 1: Raspar la tabla de resultados de la búsqueda ---
-        table = soup.find('table', class_='tabla') # Buscar la tabla principal de resultados
+        # Raspar la tabla de resultados de la búsqueda (clase 'tabla')
+        table = soup.find('table', class_='tabla')
 
         if not table:
-            print("Tabla de resultados de búsqueda no encontrada.") # Log
-            return {"nombre_empresa": nombre_empresa, "proyectos": [], "error": "No se encontraron resultados o la tabla de busqueda cambió"}
+            print("Tabla de resultados de busqueda no encontrada o vacia.")
+            return []
 
-        # Asumimos que las filas de resultados son <tr> dentro del <tbody> (excluyendo thead)
-        # Asegúrate de que este selector capture correctamente las filas de resultados
         rows = table.find_all('tr')
-        if len(rows) > 1: # Si hay mas de 1 fila (la primera suele ser el encabezado)
-             result_rows = rows[1:] # Saltar la fila de encabezado
-        else:
-             print("Solo fila de encabezado o tabla vacía.") # Log
-             return {"nombre_empresa": nombre_empresa, "proyectos": [], "error": "No se encontraron proyectos"}
+        if len(rows) <= 1:
+             print(f"No se encontraron proyectos en los resultados de busqueda para '{nombre_empresa}'.")
+             return []
+
+        result_rows = rows[1:] # Saltar la fila de encabezado
+
+        print(f"Proyectos encontrados en resultados de busqueda: {len(result_rows)}")
+
+        # Limitar a los primeros N resultados y extraer el enlace del EXPEDIENTE
+        # El enlace de detalle/expediente parece estar en la primera columna (indice 0)
+        for i, row in enumerate(result_rows[:5]): # Procesar solo los primeros 5 proyectos
+            columns = row.find_all(['td', 'th'])
+
+            # Extraer el enlace al expediente del <a> en la primera columna
+            expediente_url = None
+            if len(columns) > 0:
+                 link_elemento_expediente = columns[0].find('a', href=True)
+
+                 if link_elemento_expediente:
+                      expediente_href = link_elemento_expediente['href']
+                      # Construir URL completa del expediente si es relativa
+                      if expediente_href.startswith('/'):
+                          expediente_url = BASE_SEIA_URL + expediente_href
+                      else:
+                           expediente_url = expediente_href # Asumir completa o ajustar
 
 
-        print(f"Proyectos encontrados en resultados de busqueda: {len(result_rows)}") # Log
-
-        # Limitar a los primeros N resultados para evitar demasiadas solicitudes
-        # Considera si necesitas procesar mas o tener una logica para seleccionar el proyecto correcto
-        for i, row in enumerate(result_rows[:5]): # Procesar solo los primeros 5 proyectos encontrados
-            # --- PARTE 2: Extraer datos basicos del proyecto Y EL ENLACE ---
-            columns = row.find_all(['td', 'th']) # Columnas de la fila del resultado de busqueda
-
-            if len(columns) >= 6: # Asegurarse de que hay suficientes columnas para los datos basicos + link
-                try:
-                    nombre_proyecto = columns[0].get_text(strip=True)
-                    link_elemento_proyecto = columns[0].find('a', href=True) # Asumimos que el link esta en la primera columna
-
-                    if link_elemento_proyecto:
-                         project_detail_url = link_elemento_proyecto['href'] # Obtener el href
-                         # Construir la URL completa si el link es relativo
-                         if project_detail_url.startswith('/'):
-                             project_detail_url = BASE_SEIA_URL + project_detail_url
-                    else:
-                         print(f"No se encontró enlace de detalle para el proyecto: {nombre_proyecto}") # Log
-                         project_detail_url = None # No hay enlace para raspar RCA
-
-                    proyecto_data = {
-                        "nombre_proyecto": nombre_proyecto,
-                        "link_detalle": project_detail_url, # Guardar el link
-                        "region": columns[1].get_text(strip=True),
-                        "tipo": columns[2].get_text(strip=True),
-                        "fecha_ingreso": columns[3].get_text(strip=True),
-                        "tipo_presentacion": columns[4].get_text(strip=True),
-                        "codigo": columns[5].get_text(strip=True),
-                        "rcas_asociadas": [] # Lista para guardar las RCAs que encontraremos
-                    }
-
-                    # --- PARTE 3: Si hay enlace de detalle, raspar las RCA ---
-                    if project_detail_url:
-                        # Pausa pequeña para no sobrecargar el servidor del SEIA
-                        time.sleep(1)
-                        rcas = _scrape_rcas_from_project_page(project_detail_url)
-                        proyecto_data["rcas_asociadas"] = rcas
-
-                    proyectos_encontrados.append(proyecto_data)
-
-                except IndexError as ie:
-                    print(f"Error de indice al procesar fila de resultado de busqueda {i}: {ie} - Fila: {row}")
-                except Exception as ex:
-                    print(f"Error al extraer datos basicos o enlace de fila {i}: {ex} - Fila: {row}")
+            # Si encontramos el enlace al expediente, raspar los documentos
+            documentos_rcas = []
+            if expediente_url:
+                print(f"Encontrado enlace de expediente: {expediente_url}. Raspando documentos...")
+                time.sleep(2) # Pausa antes de ir a la pagina del expediente
+                documentos_rcas = _scrape_expediente_documents(expediente_url)
             else:
-                 print(f"Fila de resultado de busqueda {i} no tiene suficientes columnas.") # Log
+                 print(f"No se encontro enlace de expediente en la primera columna para la fila {i}.")
+
+
+            # Añadir los datos basicos del proyecto + los documentos/RCAs encontrados
+            # Asegurarse de que las columnas existan antes de acceder a ellas
+            nombre_proyecto = columns[0].get_text(strip=True) if len(columns) > 0 else "N/A"
+            region = columns[1].get_text(strip=True) if len(columns) > 1 else "N/A"
+            tipo = columns[2].get_text(strip=True) if len(columns) > 2 else "N/A"
+            fecha_ingreso = columns[3].get_text(strip=True) if len(columns) > 3 else "N/A"
+            tipo_presentacion = columns[4].get_text(strip=True) if len(columns) > 4 else "N/A"
+            codigo = columns[5].get_text(strip=True) if len(columns) > 5 else "N/A"
+
+
+            proyectos_encontrados.append({
+                 "nombre_proyecto": nombre_proyecto,
+                 "link_expediente": expediente_url if expediente_url else "No disponible",
+                 "region": region,
+                 "tipo": tipo,
+                 "fecha_ingreso": fecha_ingreso,
+                 "tipo_presentacion": tipo_presentacion,
+                 "codigo": codigo,
+                 "documentos_rcas": documentos_rcas # Lista de documentos/RCAs para este proyecto
+            })
 
 
     except requests.exceptions.RequestException as e:
-        print(f"Error al realizar la solicitud de busqueda SEIA para {nombre_empresa}: {e}")
-        return {"nombre_empresa": nombre_empresa, "proyectos": [], "error": f"Error de conexión o solicitud: {e}"}
+        print(f"Error de solicitud HTTP en buscar_empresa: {e}")
+        return []
     except Exception as e:
-        print(f"Error general en buscar_empresa para {nombre_empresa}: {e}")
-        return {"nombre_empresa": nombre_empresa, "proyectos": [], "error": f"Error inesperado: {e}"}
+        print(f"Error general en buscar_empresa: {e}")
+        return []
 
-    # Retornar la lista de proyectos encontrados, incluyendo sus RCAs si se pudieron raspar
-    # Solo retornamos la lista de proyectos, puedes ajustar si necesitas la empresa_nombre tambien
-    # return {"nombre_empresa": nombre_empresa, "proyectos": proyectos_encontrados}
-    # Retornamos la lista de proyectos directamente, que es lo que se usara en main.py
-    # Asegúrate de ajustar como usas esto en main.py si la estructura de retorno anterior era necesaria
-    # En main.py, datos_seia ahora será la lista de proyectos
-    return proyectos_encontrados # Retorna la lista de diccionarios de proyectos, cada uno con su lista 'rcas_asociadas'
+    print(f"Busqueda de proyectos y raspado de documentos del expediente completado. Proyectos con documentos procesados: {len(proyectos_encontrados)}")
+    return proyectos_encontrados
