@@ -7,10 +7,12 @@ from fastapi.responses import HTMLResponse, Response
 from typing import List
 import openai
 import os
-import json # Importar json para manejar datos estructurados si es necesario
+import json
 
-# Importar la funcion buscar_empresa del scraper
+# Importar los scrapers
 from app.seia_scraper import buscar_empresa
+from app.bcn_scraper import buscar_normativa_bcn # Importar el nuevo scraper de BCN
+
 
 app = FastAPI()
 
@@ -29,55 +31,76 @@ async def render_form(request: Request):
 
 # Ruta para recibir y procesar formulario
 # La URL debe coincidir con el fetch en index.html (guion bajo y barra final)
-@app.post("/analizar_formulario/") # <--- URL con guiones bajos!
+@app.post("/analizar_formulario/")
 async def analizar_formulario(
     analisis: str = Form(...),
-    empresa: str = Form(...), # Usamos 'empresa' para buscar el proyecto
+    empresa: str = Form(...),
     sector: str = Form(...), # Tipo de asesor
-    documentos: List[UploadFile] = File(default=None) # Usar List[UploadFile] para multiples archivos
+    documentos: List[UploadFile] = File(default=None)
 ):
-    # --- Lógica para el modo "Ambiental" (basada en el campo 'sector') ---
-    # Puedes añadir aqui la lógica para otros modos si son diferentes
-    seia_data_formatted = ""
+    # --- Lógica condicional basada en el 'sector' (Tipo de asesor) ---
+    datos_externos_formateados = "" # Variable para almacenar los datos de SEIA o BCN
+
     if sector.lower() == "ambiental":
         print(f"Modo Ambiental activado. Buscando en SEIA para: {empresa}")
         # Buscar proyectos y raspar documentos/RCAs del SEIA
-        # La función ahora retorna una lista de diccionarios de proyecto
+        # Retorna una lista de diccionarios de proyecto
         proyectos_seia = buscar_empresa(empresa)
 
-        # Formatear los datos obtenidos del SEIA (proyectos y sus documentos/RCAs)
+        # Formatear los datos obtenidos del SEIA para el prompt
         if proyectos_seia:
-            seia_data_formatted += "Información relevante extraída del SEIA:\n\n"
+            datos_externos_formateados += "Información relevante extraída del SEIA:\n\n"
             for i, proyecto in enumerate(proyectos_seia):
-                seia_data_formatted += f"--- Proyecto {i+1}: {proyecto.get('nombre_proyecto', 'N/A')} (Código: {proyecto.get('codigo', 'N/A')}) ---\n"
-                seia_data_formatted += f"Enlace Expediente: {proyecto.get('link_expediente', 'No disponible')}\n"
-                seia_data_formatted += f"Región: {proyecto.get('region', 'N/A')}\n"
-                seia_data_formatted += f"Fecha Ingreso: {proyecto.get('fecha_ingreso', 'N/A')}\n\n"
+                datos_externos_formateados += f"--- Proyecto {i+1}: {proyecto.get('nombre_proyecto', 'N/A')} (Código: {proyecto.get('codigo', 'N/A')}) ---\n"
+                datos_externos_formateados += f"Enlace Expediente: {proyecto.get('link_expediente', 'No disponible')}\n"
+                datos_externos_formateados += f"Región: {proyecto.get('region', 'N/A')}\n"
+                datos_externos_formateados += f"Fecha Ingreso: {proyecto.get('fecha_ingreso', 'N/A')}\n\n"
 
                 # Formatear los documentos/RCAs encontrados para este proyecto
                 documentos_rcas = proyecto.get('documentos_rcas', [])
                 if documentos_rcas:
-                    seia_data_formatted += "Documentos/RCAs encontrados para este proyecto:\n"
+                    datos_externos_formateados += "Documentos/RCAs encontrados para este proyecto:\n"
                     for j, doc in enumerate(documentos_rcas):
-                        seia_data_formatted += f"  - {doc.get('documento_tipo', 'Documento sin tipo')} (Folio: {doc.get('folio', 'N/A')}, Fecha: {doc.get('fecha', 'N/A')})\n"
+                        datos_externos_formateados += f"  - {doc.get('documento_tipo', 'Documento sin tipo')} (Folio: {doc.get('folio', 'N/A')}, Fecha: {doc.get('fecha', 'N/A')})\n"
                         if doc.get('link_pdf', 'No disponible') != "No disponible":
-                            seia_data_formatted += f"    Enlace PDF: {doc.get('link_pdf')}\n"
-                    seia_data_formatted += "\n"
+                            datos_externos_formateados += f"    Enlace PDF: {doc.get('link_pdf')}\n"
+                    datos_externos_formateados += "\n"
                 else:
-                    seia_data_formatted += "No se encontraron documentos/RCAs específicos para este proyecto.\n\n"
-            seia_data_formatted += "---\n\n"
+                    datos_externos_formateados += "No se encontraron documentos/RCAs específicos en SEIA para este proyecto.\n\n"
+            datos_externos_formateados += "---\n\n"
         else:
-            seia_data_formatted = "No se encontraron proyectos relevantes en el SEIA para la búsqueda.\n\n"
+            datos_externos_formateados = "No se encontraron proyectos relevantes en el SEIA para la búsqueda.\n\n"
 
-    elif sector.lower() == "legal" or sector.lower() == "administrativo":
-         # Lógica para otros modos: quizás no buscar en SEIA, o buscar otra cosa
-         seia_data_formatted = f"Modo {sector} activado. No se realizó búsqueda específica en SEIA para este modo.\n\n"
-         # Puedes añadir aqui otra logica de busqueda o recoleccion de datos si aplica
+    elif sector.lower() == "legal": # --- Lógica para el modo "Legal" ---
+        print(f"Modo Legal activado. Buscando normativa en BCN para: {analisis}")
+        # Buscar normativa en BCN usando la consulta del usuario
+        normativas_bcn = buscar_normativa_bcn(analisis)
+
+        # Formatear los resultados de la BCN para el prompt
+        if normativas_bcn:
+            datos_externos_formateados += "Normativa encontrada en BCN (potencialmente relevante):\n\n"
+            for i, norma in enumerate(normativas_bcn):
+                datos_externos_formateados += f"--- Norma {i+1} ---\n"
+                datos_externos_formateados += f"Nombre: {norma.get('nombre', 'N/A')}\n"
+                datos_externos_formateados += f"Tipo: {norma.get('tipo', 'N/A')}\n" # Requiere extraccion real en scraper
+                datos_externos_formateados += f"Número: {norma.get('numero', 'N/A')}\n" # Requiere extraccion real en scraper
+                datos_externos_formateados += f"Fecha: {norma.get('fecha', 'N/A')}\n" # Requiere extraccion real en scraper
+                datos_externos_formateados += f"Enlace: {norma.get('link', 'No disponible')}\n"
+                datos_externos_formateados += "\n"
+            datos_externos_formateados += "---\n\n"
+        else:
+            datos_externos_formateados = "No se encontró normativa relevante en BCN para la consulta.\n\n"
+
+
+    elif sector.lower() == "administrativo": # --- Lógica para el modo "Administrativo" ---
+         # Puedes añadir aqui logica especifica para el modo administrativo
+         datos_externos_formateados = f"Modo Administrativo activado. Puedes implementar lógica de búsqueda o análisis específica aquí.\n\n"
+         # Por ahora, no hace busqueda externa
 
     else:
         # Modo desconocido o no seleccionado
-        seia_data_formatted = "Tipo de asesor no especificado o desconocido.\n\n"
-        # No se realiza busqueda en SEIA ni otra logica especifica
+        datos_externos_formateados = "Tipo de asesor no especificado o desconocido. No se realizó búsqueda externa.\n\n"
+        # No se realiza busqueda externa
 
 
     # Procesar documentos subidos (como antes)
@@ -102,14 +125,26 @@ async def analizar_formulario(
     texto_docs = "\n\n".join(contenidos) if contenidos else "Sin documentos adjuntos."
 
 
-    # --- Construir el prompt MEJORADO para GPT ---
+    # --- Construir el prompt MEJORADO para GPT (Ajustado para modos y datos externos) ---
 
     client = openai.OpenAI()
 
-    try:
-        # Incluir los datos del SEIA y los documentos adjuntos en el prompt del usuario
-        prompt_user_content = f"""
-Por favor, realiza el análisis técnico y legal solicitado basándote en la siguiente información:
+    # Ajustar el prompt del sistema segun el tipo de asesor
+    system_prompt_content = """Eres un asesor experto en normativa, regulaciones y análisis de riesgos en Chile.
+Tu objetivo es proporcionar un análisis detallado, estructurado, profesional y preciso sobre la consulta del usuario, basándote en TODA la información proporcionada (consulta, empresa, datos externos -SEIA o BCN-, documentos adjuntos).
+
+Directrices generales para la respuesta:
+1.  **Estructura:** Divide la respuesta en secciones claras usando encabezados.
+2.  **Contenido:** Profundiza en los aspectos relevantes segun el tipo de asesor (ambiental, legal, administrativo).
+3.  **Citación:** Siempre que sea posible y relevante, cita explícitamente las fuentes proporcionadas (datos del SEIA, normativa BCN, documentos adjuntos).
+4.  **Riesgos y Recomendaciones:** Identifica riesgos y formula recomendaciones concretas basadas en el analisis y las fuentes.
+5.  **Formato:** Usa viñetas dentro de las secciones.
+6.  **Idioma:** Responde siempre en español de Chile.
+"""
+
+    # Ajustar el prompt del usuario incluyendo los datos externos y documentos
+    prompt_user_content = f"""
+Por favor, realiza el análisis solicitado basándote en la siguiente información:
 
 Información de la Empresa:
 Nombre proporcionado: {empresa}
@@ -118,31 +153,23 @@ Tipo de asesor solicitado: {sector}
 Consulta específica a analizar:
 {analisis}
 
-{seia_data_formatted} # <-- ¡Incluir aquí los datos del SEIA/RCAs formateados!
+--- Datos Externos Obtenidos ({sector}) ---
+{datos_externos_formateados} # <-- ¡Incluir aquí los datos de SEIA o BCN formateados!
+---------------------------------------
 
-Contenido de los Documentos Adjuntos (si fueron proporcionados):
+--- Contenido de Documentos Adjuntos ---
 {texto_docs}
+------------------------------------
 
-Genera el análisis siguiendo estrictamente las directrices de estructura, contenido técnico/legal, citación, riesgos y recomendaciones detalladas en tus instrucciones de sistema. Enfócate en la consulta específica y utiliza la información del SEIA y documentos para fundamentar tu respuesta en el contexto chileno.
+Genera el análisis siguiendo estrictamente las directrices y usando la información proporcionada. Adapta tu enfoque segun el 'Tipo de asesor' solicitado. Si no hay datos externos o documentos, basa tu respuesta en tu conocimiento general y la consulta.
 """
 
+    try:
         response = client.chat.completions.create(
              model="gpt-3.5-turbo", # Puedes cambiar a "gpt-4" si lo necesitas y tienes acceso
              messages=[
-                 # Prompt del sistema: Define el rol, tono y expectativas generales de FORMATO y CONTENIDO
-                 {"role": "system", "content": """Eres un asesor experto en normativa ambiental, legal, técnica y de riesgo en Chile.
-Tu objetivo es proporcionar un análisis **detallado, estructurado, profesional y preciso** sobre la consulta del usuario, basándote en TODA la información proporcionada (consulta, empresa, datos del SEIA/RCAs, documentos adjuntos).
-
-Directrices para la respuesta:
-1.  **Estructura:** Divide la respuesta en secciones claras usando encabezados (ej: 1. Normativa Aplicable, 2. Análisis Técnico/Situacional, 3. Evaluación de Riesgos, 4. Recomendaciones).
-2.  **Contenido Técnico/Legal:** Profundiza en los aspectos técnicos y legales relevantes. **Haz referencia directa a los documentos/RCAs del SEIA proporcionados cuando sea aplicable al análisis de la consulta.**
-3.  **Citación:** Siempre que sea posible y relevante, **cita explícitamente la normativa ambiental y legal chilena aplicable (leyes, reglamentos, DS, etc.) Y haz referencia a las RCAs específicas si se proporcionaron en los datos del SEIA (ej: "Según la RCA N° XXX...", "El expediente ZZZ indica...").** No inventes citas ni datos de RCAs; usa solo la información proporcionada.
-4.  **Riesgos:** Identifica y describe claramente los **risgos** técnicos, legales y operacionales asociados a la consulta o la situación de la empresa, **conectándolos con las normativas y RCAs relevantes si la información está disponible.**
-5.  **Recomendaciones:** Formula **recomendaciones concretas, prácticas y aplicables** para la empresa, **basadas en el análisis y la información del SEIA/RCAs.**
-6.  **Formato:** Usa **viñetas** dentro de las secciones para listar puntos clave. Asegúrate de que el texto sea legible y bien organizado.
-7.  **Idioma:** Responde siempre en español de Chile.
-"""},
-                 {"role": "user", "content": prompt_user_content} # Usamos la variable con todo el contenido
+                 {"role": "system", "content": system_prompt_content}, # Usamos la variable
+                 {"role": "user", "content": prompt_user_content} # Usamos la variable
              ],
              temperature=0.7
          )
