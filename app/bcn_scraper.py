@@ -2,101 +2,116 @@
 import requests
 from bs4 import BeautifulSoup
 import time
-import re
 
-# URL principal de la BCN o Ley Chile
-BASE_BCN_URL = "https://www.bcn.cl" # O https://www.leychile.cl
-# URL especifica para la busqueda de normativa.
-# **NECESITAS ENCONTRAR ESTA URL EN EL SITIO DE LA BCN/LEY CHILE**
-BUSQUEDA_NORMATIVA_URL = "https://www.bcn.cl/buscador" # ESTA ES UNA URL DE EJEMPLO, AJUSTA
+# URL base del sitio de la BCN o Ley Chile
+BASE_BCN_URL = "https://www.bcn.cl" # O revisa si es https://www.leychile.cl
+
+# **NECESITAS ENCONTRAR ESTA URL**
+# Esta es la dirección web donde haces la busqueda de normativa.
+# Ve a la pagina de la BCN, busca normativa, y mira la barra de direcciones
+# después de buscar. Copia esa URL base de busqueda.
+BUSQUEDA_NORMATIVA_URL = "PON_AQUI_LA_URL_DE_BUSQUEDA_DE_NORMATIVA_DE_LA_BCN" # <-- ¡AJUSTA ESTO!
 
 
 def buscar_normativa_bcn(consulta: str) -> list:
     """
-    Busca normativa legal en el sitio de la BCN (Ley Chile) basada en una consulta.
-    Retorna una lista de diccionarios con metadata de la normativa encontrada.
+    Intenta buscar normativa legal en el sitio de la BCN (Ley Chile).
+    Necesita que BUSQUEDA_NORMATIVA_URL y el payload esten correctos.
     """
     normativas_encontradas = []
     search_url = BUSQUEDA_NORMATIVA_URL
 
-    # **NECESITAS INSPECCIONAR EL FORMULARIO DE BUSQUEDA EN EL SITIO DE LA BCN**
-    # Identifica el nombre del campo de texto para la busqueda y otros campos relevantes.
+    # --- **IDENTIFICA EL FORMULARIO DE BUSQUEDA** ---
+    # Ve a la pagina donde buscas normativa en la BCN.
+    # Haz clic derecho en el campo donde escribes la consulta, selecciona "Inspeccionar".
+    # Busca el atributo 'name' de ese campo (ej: name="texto", name="q"). PONLO ABAJO.
+    # Si hay otros campos ocultos o necesarios en el formulario, identificalos e incluyelos.
     payload = {
-        "texto": consulta, # ESTE ES EL NOMBRE DE CAMPO DE TEXTO, AJUSTA SI ES DIFERENTE
-        # **AÑADE AQUI OTROS CAMPOS DEL FORMULARIO DE BUSQUEDA SI SON NECESARIOS**
-        # ej: "tipo_norma": "ley", "vigente": "si", etc.
+        "NOMBRE_DEL_CAMPO_DE_CONSULTA": consulta, # <-- ¡AJUSTA "NOMBRE_DEL_CAMPO_DE_CONSULTA"!
+        # **AÑADE AQUI OTROS CAMPOS DEL FORMULARIO SI SON NECESARIOS**
+        # ej: "campo_fecha_desde": "", "campo_tipo_norma": "ley", etc.
     }
 
     headers = {
-        "User-Agent": "Mozilla/5.0"
+        "User-Agent": "Mozilla/5.0" # Simula un navegador
     }
 
-    print(f"Buscando normativa en BCN para la consulta: {consulta}")
+    print(f"Intentando buscar normativa en BCN para: {consulta}")
 
     try:
-        # **VERIFICA SI ES UNA SOLICITUD GET o POST**
-        # La mayoria de los buscadores usan GET para busquedas simples en la URL o POST con formulario.
-        # response = requests.get(search_url, params=payload, headers=headers, timeout=15) # Ejemplo GET
-        response = requests.post(search_url, data=payload, headers=headers, timeout=15) # Ejemplo POST (AJUSTA METODO)
-        response.raise_for_status()
+        # --- **IDENTIFICA EL METODO DE ENVIO DEL FORMULARIO** ---
+        # En la misma herramienta de inspeccion (pestaña Network o mirando el tag <form>),
+        # mira si el formulario se envia por GET o POST.
+        # Descomenta la linea correcta y comenta la otra.
+        # response = requests.get(search_url, params=payload, headers=headers, timeout=15) # Si es GET
+        response = requests.post(search_url, data=payload, headers=headers, timeout=15) # Si es POST <-- ¡AJUSTA AQUI (GET o POST)!
+
+        response.raise_for_status() # Lanza error si la solicitud falla
 
         soup = BeautifulSoup(response.content, 'html.parser')
 
-        # --- **PARTE CRUCIAL: RASCAR LOS RESULTADOS DE LA BUSQUEDA DE NORMATIVA** ---
-        # **NECESITAS INSPECCIONAR LA ESTRUCTURA HTML DE LA PAGINA DE RESULTADOS DE LA BCN**
-        # Busca la lista o tabla que contiene los resultados de la normativa.
-        # Identifica como se diferencia cada resultado y que elementos contienen la metadata (nombre, tipo, numero, enlace).
+        # --- **PUNTO CLAVE: RASCAR LOS RESULTADOS DE LA BUSQUEDA** ---
+        # **AHORA NECESITAS MIRAR LA PAGINA DE RESULTADOS DE BUSQUEDA EN TU NAVEGADOR**
+        # Busca donde aparece la lista de normas encontradas.
+        # ¿Es una tabla? ¿Son divs? ¿Tienen alguna clase CSS o ID especial?
 
-        # **EJEMPLOS HIPOTETICOS DE SELECTORES (AJUSTA ESTO):**
-        # resultados_list = soup.find_all('div', class_='resultado-norma') # Si cada resultado es un div
-        # resultados_table = soup.find('table', id='tablaResultados') # Si los resultados estan en una tabla
-        # resultados_links = soup.select('h3.titulo-norma a') # Si el enlace esta en un h3 con clase
+        # **EJEMPLOS HIPOTETICOS DE COMO ENCONTRAR LOS RESULTADOS (AJUSTA ESTO COMPLETAMENTE):**
+        # Si cada resultado esta en un div con clase "resultado-busqueda":
+        # resultado_items = soup.find_all('div', class_='resultado-busqueda')
 
-        # Por ahora, un placeholder simple: buscar todos los enlaces que parezcan resultados
-        # ESTE SELECTOR PROBABLEMENTE NO ES SUFICIENTE, AJUSTA
-        result_items = soup.find_all('a', href=True) # Busca todos los enlaces (MUY GENERAL)
+        # Si los resultados estan en una tabla con id "tabla-resultados":
+        # tabla_resultados = soup.find('table', id='tabla-resultados')
+        # resultado_items = tabla_resultados.find_all('tr')[1:] if tabla_resultados else [] # Saltar encabezado
 
-        print(f"Elementos encontrados que podrian ser resultados: {len(result_items)}") # Log
+        # Si son enlaces directos dentro de alguna seccion:
+        # resultado_items = soup.select('#id_de_la_lista a')
 
-        # Limitar a los primeros N resultados relevantes
+
+        # **POR AHORA, USARE UN SELECTOR MUY GENERICO COMO MARCADOR. ESTO SEGURO FALLARÁ HASTA QUE LO AJUSTES.**
+        # NECESITAS REEMPLAZAR COMPLETAMENTE LAS LINEAS ABAJO POR LA LOGICA CORRECTA PARA ENCONTRAR CADA RESULTADO
+        resultado_items = soup.find_all('a', href=True) # <-- ¡AJUSTA ESTO TOTALMENTE!
+
+
+        print(f"Elementos potenciales encontrados en resultados de BCN: {len(resultado_items)}")
+
+        # --- **EXTRAER INFORMACION DE CADA RESULTADO** ---
+        # Ahora itera sobre los resultados encontrados (resultado_items) y extrae los datos de cada norma.
+        # ¿Como obtienes el nombre, numero, fecha, tipo y el ENLACE completo de cada norma en el HTML?
+
+        # **EJEMPLO HIPOTETICO DE EXTRACCION (AJUSTA ESTO COMPLETAMENTE):**
         count = 0
-        for item in result_items:
-            # --- **IDENTIFICAR Y EXTRAER METADATA DE CADA RESULTADO (AJUSTA ESTO)** ---
-            # Debes poner logica aqui para verificar si el 'item' es un resultado real
-            # (ej: el enlace apunta a una ley, el texto es un titulo de norma)
-            # y extraer su nombre, numero, fecha, tipo, y el enlace completo.
+        for item in resultado_items: # Itera sobre los resultados que encontraste arriba
+            # **PON AQUI LA LOGICA PARA EXTRAER LOS DATOS DE ESTE 'item'**
+            # Por ejemplo, si 'item' es un enlace <a>, obtienes el link con item['href']
+            # y el texto con item.get_text()
 
-            link = item['href']
-            # Construir URL completa si es relativa
+            link = item.get('href', '#') # Obtiene el enlace
             if link.startswith('/'):
-                 full_link = BASE_BCN_URL + link
-            else:
-                 full_link = link # Asumir completa o ajustar
+                 full_link = BASE_BCN_URL + link # Construye URL completa si es relativa
 
-            # **EJEMPLO HIPOTETICO DE EXTRACCION (AJUSTA ESTO):**
-            # Intentar extraer texto del enlace o un elemento cercano que sea el titulo/nombre
-            nombre_norma = item.get_text(strip=True)
+            nombre_norma = item.get_text(strip=True) # Obtiene el texto del enlace/item
 
-            # **Añade lógica para extraer tipo, numero, fecha, etc. si estan cerca en el HTML**
-            tipo_norma = "Desconocido" # Placeholder
-            numero_norma = "N/A"    # Placeholder
-            fecha_publicacion = "N/A" # Placeholder
+            # **NECESITAS LOGICA COMPLEJA AQUI para obtener tipo, numero, fecha, etc.**
+            # Pueden estar en elementos HTML cercanos al enlace, o parseando el texto del nombre.
+            tipo_norma = "???" # <-- ¡AJUSTA EXTRACCION REAL!
+            numero_norma = "???" # <-- ¡AJUSTA EXTRACCION REAL!
+            fecha_publicacion = "???" # <-- ¡AJUSTA EXTRACCION REAL!
 
-            # **AÑADE LOGICA PARA FILTRAR RESULTADOS RELEVANTES**
-            # Por ejemplo, verificar si el enlace contiene "/leyes/ver_txt.html?id=" o "/decretos/"
-            # if "/leyes/" in full_link or "/decretos/" in full_link:
+            # **AÑADE LOGICA PARA FILTRAR SOLO RESULTADOS DE NORMATIVA REALES**
+            # El selector inicial puede traer otros enlaces. Verifica el link o el texto.
+            es_norma_relevante = True # <-- ¡AÑADE LOGICA DE FILTRO!
 
-            # Por ahora, añadimos un resultado simple si parece un enlace
-            if len(nombre_norma) > 5 and full_link.startswith('http'): # Filtro muy basico
+
+            if es_norma_relevante and len(nombre_norma) > 5: # Filtro basico, mejora esto
                  normativas_encontradas.append({
                      "nombre": nombre_norma,
-                     "tipo": tipo_norma, # Ajusta extraccion real
-                     "numero": numero_norma, # Ajusta extraccion real
-                     "fecha": fecha_publicacion, # Ajusta extraccion real
+                     "tipo": tipo_norma,
+                     "numero": numero_norma,
+                     "fecha": fecha_publicacion,
                      "link": full_link,
                  })
                  count += 1
-                 if count >= 10: # Limitar a los primeros 10 resultados (AJUSTA LIMITE)
+                 if count >= 15: # Limitar a los primeros 15 resultados encontrados (AJUSTA LIMITE)
                      break
 
 
@@ -104,7 +119,7 @@ def buscar_normativa_bcn(consulta: str) -> list:
             print("No se encontraron resultados de normativa relevantes.")
 
     except requests.exceptions.RequestException as e:
-        print(f"Error al realizar la solicitud de busqueda BCN para '{consulta}': {e}")
+        print(f"Error de solicitud en busqueda BCN para '{consulta}': {e}")
         return []
     except Exception as e:
         print(f"Error general en buscar_normativa_bcn para '{consulta}': {e}")
