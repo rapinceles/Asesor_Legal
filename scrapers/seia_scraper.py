@@ -27,7 +27,7 @@ def sincronizar_proyectos_por_empresa(db: Session, nombre_empresa: str):
         response.raise_for_status()
         soup = BeautifulSoup(response.content, 'html.parser')
         
-        table = soup.find('table', class_='tabla')
+        table = soup.find('table', class_='tabla_datos')
         if not table:
             print(f"No se encontró tabla de resultados para '{nombre_empresa}'.")
             return
