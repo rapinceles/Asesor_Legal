@@ -1,64 +1,165 @@
 # engine/analysis_engine.py
-# Este será el nuevo cerebro de nuestra aplicación.
+# Motor de análisis mejorado para MERLIN
 
 import openai
+import os
+from typing import List, Optional
 
-def realizar_analisis_completo(empresa: str, analisis: str, sector: str, documentos: list):
+# Configurar la API de OpenAI
+# openai.api_key = os.getenv("OPENAI_API_KEY")
+
+def realizar_analisis_completo(empresa: str, analisis: str, sector: str, documentos: List[str]):
     """
     Esta función orquesta todo el proceso de análisis:
-    1. Consulta la base de datos local para obtener datos de SEIA, SNIFA y BCN.
-    2. Procesa los documentos adjuntos.
-    3. Construye un prompt detallado para la IA.
-    4. Llama a la API de OpenAI.
-    5. Devuelve la respuesta final.
+    1. Determina el tipo de análisis (general o empresarial)
+    2. Construye el prompt apropiado
+    3. Llama a la API de OpenAI
+    4. Devuelve la respuesta final
     """
-    # --- PASO 1: Consultar la Base de Datos (Lógica a implementar en los siguientes pasos) ---
-    # Por ahora, simularemos la obtención de datos.
-    # En el futuro, aquí llamaremos a funciones que hagan:
-    # db.query(Proyectos_SEIA).filter_by(empresa=empresa)...
-    # db.query(Sanciones_SNIFA).filter_by(empresa=empresa)...
-    datos_db_seia = f"Búsqueda en SEIA para '{empresa}' realizada en la base de datos local. (Lógica pendiente)\n"
-    datos_db_snifa = f"Búsqueda en SNIFA para '{empresa}' realizada en la base de datos local. (Lógica pendiente)\n"
-    datos_db_bcn = f"Búsqueda en BCN para la consulta '{analisis}' realizada en la base de datos local. (Lógica pendiente)\n"
+    
+    try:
+        client = openai.OpenAI()
+        
+        if not empresa:
+            # Análisis general
+            return realizar_analisis_general(client, analisis, documentos)
+        else:
+            # Análisis empresarial
+            return realizar_analisis_empresarial(client, empresa, analisis, documentos)
+            
+    except Exception as e:
+        print(f"Error en el motor de análisis: {e}")
+        return generar_respuesta_error(str(e))
 
-    datos_externos_formateados = ""
-    if sector.lower() == "ambiental":
-        datos_externos_formateados = datos_db_seia + datos_db_snifa # El análisis ambiental incluye SEIA y SNIFA
-    elif sector.lower() == "legal":
-        datos_externos_formateados = datos_db_bcn
-    # ...y así para otros sectores.
+def realizar_analisis_general(client, consulta: str, documentos: List[str]):
+    """
+    Realiza análisis legal general sin contexto empresarial específico
+    """
+    
+    system_prompt = """Eres MERLIN, un asesor legal especializado en derecho chileno. Tu función es:
 
-    # --- PASO 2: Procesar documentos (esta lógica la pasaremos aquí más adelante) ---
-    texto_docs = "\n\n".join(documentos) if documentos else "Sin documentos adjuntos."
+1. Proporcionar información legal precisa basada en la legislación chilena vigente
+2. Explicar conceptos legales de manera clara y comprensible
+3. Citar las fuentes legales relevantes (leyes, códigos, reglamentos)
+4. Advertir sobre limitaciones y recomendar consulta profesional cuando sea necesario
+5. Mantener un tono profesional pero accesible
 
-    # --- PASO 3: Construir el prompt (la lógica que ya tenías) ---
-    # (Esta lógica se moverá aquí desde main.py)
-    client = openai.OpenAI()
-    system_prompt_content = f"""Eres un asesor experto en normativa, regulaciones y análisis en Chile. Tu rol es: **{sector.capitalize()}**.""" # ... (el resto de tu prompt del sistema)
-    prompt_user_content = f"""
-Información para el análisis:
-Empresa: {empresa}
-Tipo de asesor solicitado: {sector}
-Consulta específica: {analisis}
---- Datos Externos Obtenidos de nuestra Base de Datos ({sector}) ---
-{datos_externos_formateados}
----------------------------------------
---- Contenido de Documentos Adjuntos ---
-{texto_docs}
-------------------------------------
-Por favor, realiza el análisis solicitado.
+IMPORTANTE: 
+- Siempre indica que tu respuesta es orientativa y no constituye asesoría legal profesional
+- Recomienda consultar con un abogado para casos específicos
+- Cita las fuentes legales cuando sea posible
+- Si no tienes información suficiente, indícalo claramente"""
+
+    texto_docs = "\n\n".join(documentos) if documentos else ""
+    
+    user_prompt = f"""
+Consulta legal: {consulta}
+
+{f"Documentos adjuntos para análisis: {texto_docs}" if texto_docs else ""}
+
+Por favor, proporciona un análisis legal detallado de la consulta planteada, incluyendo:
+1. Marco legal aplicable
+2. Análisis de la situación
+3. Recomendaciones prácticas
+4. Fuentes legales citadas
 """
-    # --- PASO 4: Llamar a la IA (la misma lógica que ya tenías) ---
+
     try:
         response = client.chat.completions.create(
             model="gpt-3.5-turbo",
             messages=[
-                {"role": "system", "content": system_prompt_content},
-                {"role": "user", "content": prompt_user_content}
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt}
             ],
-            temperature=0.7
+            temperature=0.7,
+            max_tokens=1500
         )
         return response.choices[0].message.content
     except Exception as e:
-        print(f"Error en el motor de análisis llamando a OpenAI: {e}")
-        return f"Error al generar el análisis en el motor interno: {e}"
+        return f"Error al procesar la consulta legal: {str(e)}"
+
+def realizar_analisis_empresarial(client, empresa: str, consulta: str, documentos: List[str]):
+    """
+    Realiza análisis específico de una empresa en el contexto ambiental
+    """
+    
+    system_prompt = f"""Eres MERLIN, un asesor legal ambiental especializado en el marco regulatorio chileno. Tu función es:
+
+1. Analizar el cumplimiento ambiental de empresas
+2. Evaluar riesgos y obligaciones ambientales
+3. Proporcionar recomendaciones específicas basadas en normativa chilena
+4. Contextualizar la información con el historial de la empresa
+
+Marco legal principal:
+- Ley 19.300 (Bases Generales del Medio Ambiente)
+- Decreto Supremo N° 40/2012 (Reglamento del SEIA)
+- Normativas de la SMA (Superintendencia del Medio Ambiente)
+- Resoluciones del SEA (Servicio de Evaluación Ambiental)
+
+Enfoque del análisis para: {empresa}"""
+
+    texto_docs = "\n\n".join(documentos) if documentos else ""
+    
+    if consulta.strip():
+        user_prompt = f"""
+Empresa: {empresa}
+Consulta específica: {consulta}
+
+{f"Documentos adicionales: {texto_docs}" if texto_docs else ""}
+
+Realiza un análisis ambiental específico para {empresa} considerando:
+1. Marco regulatorio aplicable
+2. Obligaciones ambientales vigentes
+3. Evaluación de riesgos específicos
+4. Recomendaciones prácticas
+5. Pasos a seguir recomendados
+
+Contextualiza el análisis con la información disponible de la empresa en el SEIA y SNIFA.
+"""
+    else:
+        user_prompt = f"""
+Empresa: {empresa}
+
+Realiza un análisis ambiental general para {empresa} que incluya:
+1. Evaluación del cumplimiento ambiental
+2. Identificación de obligaciones regulatorias
+3. Análisis de riesgos ambientales
+4. Recomendaciones para mantener el cumplimiento
+5. Consideraciones para futuras operaciones
+
+Basa el análisis en la información disponible de registros del SEIA y SNIFA.
+"""
+
+    try:
+        response = client.chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt}
+            ],
+            temperature=0.7,
+            max_tokens=2000
+        )
+        return response.choices[0].message.content
+    except Exception as e:
+        return f"Error al procesar el análisis empresarial: {str(e)}"
+
+def generar_respuesta_error(error_msg: str) -> str:
+    """
+    Genera una respuesta de error amigable para el usuario
+    """
+    return f"""
+    <div style="padding: 20px; background: rgba(255, 71, 87, 0.1); border: 1px solid rgba(255, 71, 87, 0.3); border-radius: 8px;">
+        <h3 style="color: #ff4757; margin-bottom: 15px;">⚠️ Error en el Sistema</h3>
+        <p>Lo sentimos, ha ocurrido un error al procesar su consulta:</p>
+        <p><em>{error_msg}</em></p>
+        <p>Por favor, intente nuevamente en unos momentos. Si el problema persiste, 
+        contacte al administrador del sistema.</p>
+        <p style="margin-top: 15px; font-size: 0.9em; color: #b0b0b0;">
+            <strong>Sugerencias:</strong><br>
+            • Verifique que su consulta esté bien formulada<br>
+            • Asegúrese de que el nombre de la empresa sea correcto<br>
+            • Intente con una consulta más específica
+        </p>
+    </div>
+    """

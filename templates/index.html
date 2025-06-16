@@ -1044,6 +1044,87 @@
             font-size: 0.8rem;
         }
 
+        /* Estilos para información empresarial */
+        .info-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid rgba(176, 176, 176, 0.1);
+        }
+
+        .info-item:last-child {
+            border-bottom: none;
+        }
+
+        .info-label {
+            font-weight: 500;
+            color: var(--text-gray);
+            margin-right: 15px;
+            min-width: 120px;
+        }
+
+        .info-value {
+            color: var(--text-white);
+            font-weight: 400;
+            text-align: right;
+            flex: 1;
+        }
+
+        .info-value a {
+            color: var(--primary-orange);
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+
+        .info-value a:hover {
+            color: var(--secondary-orange);
+        }
+
+        /* Estilos para RCA */
+        .rca-count {
+            background: var(--light-gray);
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            font-weight: 600;
+            color: var(--primary-orange);
+            text-align: center;
+        }
+
+        .rca-item {
+            padding: 15px;
+            margin-bottom: 15px;
+            background: var(--dark-gray);
+            border-radius: 8px;
+            border-left: 4px solid var(--success-green);
+            transition: all 0.3s ease;
+        }
+
+        .rca-item:hover {
+            background: var(--light-gray);
+            transform: translateX(3px);
+        }
+
+        .summary-text {
+            color: var(--text-gray);
+            line-height: 1.6;
+            font-size: 1rem;
+        }
+
+        .summary-text p {
+            margin-bottom: 15px;
+        }
+
+        .summary-text strong {
+            color: var(--primary-orange);
+        }
+
+        .summary-text em {
+            color: var(--text-gray);
+            font-style: italic;
+        }
+
         /* Responsive design */
         @media (max-width: 768px) {
             .container {
@@ -1366,29 +1447,80 @@
             }
         });
 
-        function executeCompanyAnalysis(companyName, query) {
+        async function executeCompanyAnalysis(companyName, query) {
             showLoading();
             
-            // Simular tiempo de procesamiento
-            setTimeout(() => {
-                hideLoading();
-                showResults();
+            try {
+                const formData = new FormData();
+                formData.append('company_name', companyName);
+                formData.append('query_box', query || '');
                 
-                if (!map) {
-                    initializeMap();
+                const response = await fetch('/analisis_empresarial/', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    hideLoading();
+                    showResults();
+                    
+                    if (!map) {
+                        initializeMap();
+                    }
+                    
+                    loadCompanyDataFromBackend(data, companyName, query);
+                } else {
+                    hideLoading();
+                    alert('Error: ' + data.error);
                 }
-                
-                loadCompanyData(companyName, query);
-            }, 2000);
+            } catch (error) {
+                hideLoading();
+                alert('Error al conectar con el servidor: ' + error.message);
+            }
         }
 
-        function executeGeneralAnalysis(query) {
+        async function executeGeneralAnalysis(query) {
             showLoading();
             
-            setTimeout(() => {
+            try {
+                const formData = new FormData();
+                formData.append('query_box', query);
+                
+                const response = await fetch('/analisis_general/', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    hideLoading();
+                    showGeneralResponse(data.respuesta);
+                    
+                    // Mostrar referencias
+                    const referencesSection = document.getElementById('references-section');
+                    const referencesContent = document.getElementById('references-content');
+                    
+                    if (data.referencias && data.referencias.length > 0) {
+                        referencesContent.innerHTML = data.referencias.map(ref => `
+                            <div class="reference-item">
+                                <div class="reference-title">${ref.title}</div>
+                                <div class="reference-description">${ref.description}</div>
+                                <a href="${ref.url}" target="_blank" class="reference-link">Ir a la fuente</a>
+                            </div>
+                        `).join('');
+                        referencesSection.classList.add('visible');
+                    }
+                } else {
+                    hideLoading();
+                    alert('Error: ' + data.error);
+                }
+            } catch (error) {
                 hideLoading();
-                showGeneralResponse(query);
-            }, 1500);
+                alert('Error al conectar con el servidor: ' + error.message);
+            }
         }
 
         function showGeneralResponse(query) {
@@ -1966,6 +2098,227 @@
                 'Cerrada': '#b0b0b0'
             };
             return colors[status] || '#ffffff';
+        }
+
+        // Nuevas funciones para manejar datos del backend
+        function loadCompanyDataFromBackend(data, companyName, query) {
+            // Cargar datos de proyectos desde el backend
+            loadProjectsDataFromBackend(data.proyectos, query);
+            
+            // Cargar datos de sanciones desde el backend
+            loadSanctionsDataFromBackend(data.sanciones);
+            
+            // Cargar información de la empresa desde el backend
+            loadCompanyInfoFromBackend(data.infoEmpresarial);
+            
+            // Cargar datos de RCA y reseña desde el backend
+            loadRCADataFromBackend(data.rcaData, data.descripcionEmpresa);
+            
+            // Si hay una consulta específica, mostrar respuesta específica
+            if (query.trim() && data.respuestaConsulta) {
+                loadCompanyQueryResponseFromBackend(companyName, data.respuestaConsulta);
+            }
+            
+            // Cargar referencias desde el backend
+            if (data.referencias && data.referencias.length > 0) {
+                loadReferencesFromBackend(data.referencias);
+            }
+            
+            // Centrar el mapa en las coordenadas proporcionadas
+            if (map && data.coordenadas) {
+                map.setView([data.coordenadas.lat, data.coordenadas.lng], 10);
+                
+                // Agregar marcador principal
+                if (window.currentMarker) {
+                    map.removeLayer(window.currentMarker);
+                }
+                
+                const popupContent = `
+                    <div style="text-align: center; padding: 10px;">
+                        <strong style="color: #ff6b35;">${companyName}</strong><br>
+                        <em style="color: #ffb366;">Ubicación Principal</em><br>
+                        <small>Santiago, Chile</small>
+                    </div>
+                `;
+                
+                window.currentMarker = L.marker([data.coordenadas.lat, data.coordenadas.lng])
+                    .addTo(map)
+                    .bindPopup(popupContent)
+                    .openPopup();
+            }
+        }
+
+        function loadProjectsDataFromBackend(projects, query = '') {
+            const projectsList = document.getElementById('projects-list');
+            
+            let headerText = '';
+            if (query && query.trim()) {
+                headerText = `<div style="background: var(--light-gray); padding: 10px; border-radius: 5px; margin-bottom: 15px; font-size: 0.9rem; color: var(--accent-orange);">
+                    📋 Búsqueda específica realizada para: "${query}"
+                </div>`;
+            } else {
+                headerText = `<div style="background: var(--light-gray); padding: 10px; border-radius: 5px; margin-bottom: 15px; font-size: 0.9rem; color: var(--text-gray);">
+                    📋 Datos obtenidos del SEIA
+                </div>`;
+            }
+            
+            if (projects && projects.length > 0) {
+                projectsList.innerHTML = headerText + projects.map((project, index) => `
+                    <div class="project-item" onclick="selectProjectFromBackend(${index})" data-project-index="${index}">
+                        <strong>${project.nombre}</strong><br>
+                        <em>Tipo:</em> ${project.tipo}<br>
+                        <em>Estado:</em> <span style="color: ${getStatusColor(project.estado)}">${project.estado}</span><br>
+                        <em>Fecha:</em> ${project.fecha}<br>
+                        <em>Código:</em> ${project.codigo}<br>
+                        <em>Dirección:</em> ${project.direccion}<br>
+                        <a href="${project.linkSeia}" target="_blank" onclick="event.stopPropagation()" style="color: var(--primary-orange); text-decoration: none; font-size: 0.9rem; margin-top: 8px; display: inline-block;">
+                            📋 Ver expediente en SEIA →
+                        </a>
+                    </div>
+                `).join('');
+                
+                // Guardar los proyectos globalmente
+                window.currentProjectsFromBackend = projects;
+            } else {
+                projectsList.innerHTML = headerText + '<div class="project-item">No se encontraron proyectos registrados en el SEIA para esta empresa.</div>';
+            }
+        }
+
+        function loadSanctionsDataFromBackend(sanctions) {
+            const sanctionsList = document.getElementById('sanctions-list');
+            
+            if (sanctions && sanctions.length > 0) {
+                sanctionsList.innerHTML = sanctions.map(sancion => `
+                    <div class="sanction-item">
+                        <strong>${sancion.tipo}</strong><br>
+                        <em>Monto:</em> ${sancion.monto}<br>
+                        <em>Fecha:</em> ${sancion.fecha}<br>
+                        <em>Estado:</em> <span style="color: ${getStatusColor(sancion.estado)}">${sancion.estado}</span><br>
+                        <em>Resolución:</em> ${sancion.resolucion}
+                    </div>
+                `).join('');
+            } else {
+                sanctionsList.innerHTML = '<div class="sanction-item">No se encontraron infracciones registradas en el SNIFA para esta empresa.</div>';
+            }
+        }
+
+        function loadCompanyInfoFromBackend(infoEmpresarial) {
+            const companyInfo = document.getElementById('company-info');
+            
+            companyInfo.innerHTML = `
+                <div class="info-item">
+                    <span class="info-label">Razón Social:</span>
+                    <span class="info-value">${infoEmpresarial.razonSocial}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Nombre Fantasía:</span>
+                    <span class="info-value">${infoEmpresarial.nombreFantasia}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Rubro:</span>
+                    <span class="info-value">${infoEmpresarial.rubro}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Página Web:</span>
+                    <span class="info-value"><a href="https://${infoEmpresarial.paginaWeb}" target="_blank">${infoEmpresarial.paginaWeb}</a></span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Teléfono:</span>
+                    <span class="info-value">${infoEmpresarial.telefono}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Email:</span>
+                    <span class="info-value"><a href="mailto:${infoEmpresarial.email}">${infoEmpresarial.email}</a></span>
+                </div>
+            `;
+        }
+
+        function loadRCADataFromBackend(rcaData, descripcionEmpresa) {
+            const rcaContent = document.getElementById('rca-content');
+            const summaryContent = document.getElementById('summary-content');
+            
+            // Renderizar información de RCA
+            const vigentesCount = rcaData.filter(rca => rca.vigente).length;
+            
+            rcaContent.innerHTML = `
+                <div class="rca-count">
+                    ${vigentesCount} RCA${vigentesCount !== 1 ? 's' : ''} vigente${vigentesCount !== 1 ? 's' : ''}
+                </div>
+                ${rcaData.filter(rca => rca.vigente).map(rca => `
+                    <div class="rca-item">
+                        <strong>${rca.nombre}</strong><br>
+                        <em>Vigencia:</em> ${rca.fechaVigencia} - ${rca.fechaVencimiento}<br>
+                        <em>Estado:</em> <span style="color: #00ff88">Vigente</span>
+                    </div>
+                `).join('')}
+            `;
+            
+            // Mostrar descripción de la empresa
+            summaryContent.innerHTML = `
+                <div class="summary-text">
+                    ${descripcionEmpresa}
+                </div>
+            `;
+        }
+
+        function loadCompanyQueryResponseFromBackend(companyName, respuestaConsulta) {
+            const companyQueryResponse = document.getElementById('company-query-response');
+            const companyQueryContent = document.getElementById('company-query-content');
+            
+            companyQueryContent.innerHTML = respuestaConsulta;
+            companyQueryResponse.classList.add('visible');
+        }
+
+        function loadReferencesFromBackend(referencias) {
+            const referencesSection = document.getElementById('references-section');
+            const referencesContent = document.getElementById('references-content');
+            
+            referencesContent.innerHTML = referencias.map(ref => `
+                <div class="reference-item">
+                    <div class="reference-title">${ref.title}</div>
+                    <div class="reference-description">${ref.description}</div>
+                    <a href="${ref.url}" target="_blank" class="reference-link">Ir a la fuente</a>
+                </div>
+            `).join('');
+            
+            referencesSection.classList.add('visible');
+        }
+
+        function selectProjectFromBackend(projectIndex) {
+            const project = window.currentProjectsFromBackend[projectIndex];
+            
+            if (map && project) {
+                // Cambiar vista del mapa a la ubicación del proyecto
+                map.setView([project.lat, project.lng], 16);
+                
+                // Remover marcador anterior
+                if (window.currentMarker) {
+                    map.removeLayer(window.currentMarker);
+                }
+                
+                // Crear popup para el proyecto
+                const popupContent = `
+                    <div style="text-align: center; padding: 10px;">
+                        <strong style="color: #ff6b35;">${project.nombre}</strong><br>
+                        <em style="color: #ffb366;">${project.tipo}</em><br>
+                        <small>${project.direccion}</small><br>
+                        <small>Estado: <span style="color: ${getStatusColor(project.estado)}">${project.estado}</span></small><br>
+                        <small>Código: ${project.codigo}</small>
+                    </div>
+                `;
+                
+                // Agregar nuevo marcador
+                window.currentMarker = L.marker([project.lat, project.lng])
+                    .addTo(map)
+                    .bindPopup(popupContent)
+                    .openPopup();
+                
+                // Actualizar estilos de selección
+                document.querySelectorAll('.project-item').forEach(item => {
+                    item.classList.remove('selected');
+                });
+                document.querySelector(`[data-project-index="${projectIndex}"]`).classList.add('selected');
+            }
         }
 
         // Inicialización de efectos

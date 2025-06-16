@@ -43,6 +43,7 @@ class SancionSNIFA(Base):
     nombre_infractor = Column(Text)
     categoria = Column(Text)
     unidad_fiscalizable = Column(Text)
+    region = Column(Text)
     estado = Column(Text)
     link_expediente = Column(Text)
     fecha_actualizacion = Column(TIMESTAMP(timezone=True), server_default='NOW()', onupdate='NOW()')
