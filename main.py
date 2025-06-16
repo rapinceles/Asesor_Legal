@@ -12,7 +12,7 @@ app = FastAPI(title="Asesor Legal Ambiental Inteligente")
 
 # Configurar carpetas estáticas y plantillas HTML (esto se mantiene igual)
 app.mount("/static", StaticFiles(directory="static"), name="static")
-templates = Jinja2Templates(directory="static")
+templates = Jinja2Templates(directory="templates")
 
 # Ruta raíz que carga la interfaz visual (esto se mantiene igual)
 @app.get("/", response_class=HTMLResponse)

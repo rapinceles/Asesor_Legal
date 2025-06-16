@@ -11,7 +11,6 @@ BASE_BCN_URL = "https://www.bcn.cl" # O https://www.leychile.cl
 # después de buscar. Pégala abajo. Ejemplo: https://www.bcn.cl/portal/resultado-busqueda
 BUSQUEDA_NORMATIVA_URL = "PON_AQUI_LA_URL_DE_BUSQUEDA_DE_NORMATIVA_DE_LA_BCN" # <-- ¡AJUSTA ESTO!
 
-
 def buscar_normativa_bcn(consulta: str) -> list:
     """
     Busca normativa legal en el sitio de la BCN (Ley Chile) basada en una consulta.

@@ -23,8 +23,7 @@ Base = declarative_base()
 # Función de utilidad para crear todas las tablas definidas en los modelos
 def init_db():
     # Importa aquí todos los modelos para que Base los conozca antes de crear las tablas
-    from models.seia_models import Empresa, ProyectoSEIA
-    from models.snifa_models import SancionSNIFA
+    from models.models import Base # Importamos la Base que contiene todos los modelos
     
     print("Creando tablas definidas en los modelos...")
     Base.metadata.create_all(bind=engine)
