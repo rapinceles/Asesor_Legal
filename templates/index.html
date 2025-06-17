@@ -3,11 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MERLIN</title>  
+    <title>MERLIN - Asesor Legal Ambiental</title>  
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&family=Orbitron:wght@400;700;900&family=Dancing+Script:wght@400;500;600;700&display=swap" rel="stylesheet">
-
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 
@@ -42,87 +41,6 @@
             position: relative;
         }
 
-        /* Efectos de fondo animados */
-        .bg-animation {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 1;
-            pointer-events: none;
-        }
-
-        .bg-animation::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: 
-                radial-gradient(circle at 20% 20%, rgba(255, 107, 53, 0.1) 0%, transparent 50%),
-                radial-gradient(circle at 80% 60%, rgba(255, 107, 53, 0.08) 0%, transparent 50%),
-                radial-gradient(circle at 60% 80%, rgba(255, 107, 53, 0.05) 0%, transparent 50%);
-            animation: pulse 4s ease-in-out infinite alternate;
-        }
-
-        @keyframes pulse {
-            0% { opacity: 0.3; }
-            100% { opacity: 0.8; }
-        }
-
-        /* Barras dinámicas decorativas */
-        .dynamic-bars {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 2;
-            pointer-events: none;
-        }
-
-        .bar {
-            position: absolute;
-            background: linear-gradient(90deg, transparent, var(--primary-orange), transparent);
-            animation: slide 3s linear infinite;
-        }
-
-        .bar:nth-child(1) {
-            top: 10%;
-            width: 200px;
-            height: 2px;
-            animation-delay: 0s;
-        }
-
-        .bar:nth-child(2) {
-            top: 30%;
-            width: 150px;
-            height: 1px;
-            animation-delay: 1s;
-        }
-
-        .bar:nth-child(3) {
-            top: 60%;
-            width: 180px;
-            height: 2px;
-            animation-delay: 2s;
-        }
-
-        .bar:nth-child(4) {
-            top: 80%;
-            width: 120px;
-            height: 1px;
-            animation-delay: 0.5s;
-        }
-
-        @keyframes slide {
-            0% { left: -200px; opacity: 0; }
-            50% { opacity: 1; }
-            100% { left: 100%; opacity: 0; }
-        }
-
         .container {
             position: relative;
             z-index: 10;
@@ -131,16 +49,10 @@
             padding: 40px 20px;
         }
 
-        /* Header ejecutivo */
         .header {
             text-align: center;
             margin-bottom: 60px;
             position: relative;
-        }
-
-        .brand-container {
-            position: relative;
-            display: inline-block;
         }
 
         .main-title {
@@ -154,12 +66,6 @@
             text-shadow: 0 0 30px rgba(255, 107, 53, 0.5);
             letter-spacing: 0.1em;
             margin-bottom: 10px;
-            animation: glow 2s ease-in-out infinite alternate;
-        }
-
-        @keyframes glow {
-            from { filter: drop-shadow(0 0 5px rgba(255, 107, 53, 0.5)); }
-            to { filter: drop-shadow(0 0 20px rgba(255, 107, 53, 0.8)); }
         }
 
         .subtitle {
@@ -170,52 +76,6 @@
             margin-bottom: 30px;
         }
 
-        /* Barra de progreso del sistema */
-        .system-status {
-            display: flex;
-            justify-content: center;
-            gap: 20px;
-            margin-bottom: 40px;
-        }
-
-        .status-item {
-            text-align: center;
-            min-width: 120px;
-        }
-
-        .status-bar {
-            width: 100%;
-            height: 6px;
-            background: var(--dark-gray);
-            border-radius: 3px;
-            overflow: hidden;
-            margin-bottom: 8px;
-        }
-
-        .status-fill {
-            height: 100%;
-            background: linear-gradient(90deg, var(--primary-orange), var(--secondary-orange));
-            border-radius: 3px;
-            animation: fillBar 2s ease-out;
-        }
-
-        @keyframes fillBar {
-            from { width: 0%; }
-            to { width: var(--fill-width); }
-        }
-
-        .status-label {
-            font-size: 0.9rem;
-            color: var(--text-gray);
-            font-weight: 500;
-            font-family: 'Dancing Script', cursive;
-            font-weight: 600;
-            font-size: 1.1rem;
-            color: var(--primary-orange);
-            text-shadow: 0 0 5px rgba(255, 107, 53, 0.3);
-        }
-
-        /* Panel principal ejecutivo */
         .main-panel {
             background: linear-gradient(145deg, var(--secondary-black), var(--dark-gray));
             border: 1px solid rgba(255, 107, 53, 0.3);
@@ -223,23 +83,9 @@
             padding: 50px;
             position: relative;
             overflow: hidden;
-            box-shadow: 
-                0 20px 40px rgba(0, 0, 0, 0.5),
-                inset 0 1px 0 rgba(255, 107, 53, 0.2);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
         }
 
-        .main-panel::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: linear-gradient(45deg, transparent, rgba(255, 107, 53, 0.05), transparent);
-            pointer-events: none;
-        }
-
-        /* Sección de búsqueda moderna */
         .search-section {
             margin-bottom: 50px;
         }
@@ -252,19 +98,6 @@
             display: flex;
             align-items: center;
             gap: 10px;
-        }
-
-        .search-label::before {
-            content: '🔍';
-            font-size: 1.2rem;
-            background: linear-gradient(45deg, var(--primary-orange), var(--secondary-orange));
-            padding: 8px;
-            border-radius: 50%;
-            display: inline-block;
-        }
-
-        .search-container {
-            position: relative;
         }
 
         .search-bar {
@@ -292,7 +125,6 @@
             color: var(--text-gray);
         }
 
-        /* Opciones de consulta modernas */
         .query-options {
             margin-bottom: 40px;
             text-align: center;
@@ -303,14 +135,6 @@
             font-weight: 600;
             color: var(--text-white);
             margin-bottom: 25px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .options-label::before {
-            content: '⚙️';
-            font-size: 1.1rem;
         }
 
         .radio-group {
@@ -319,6 +143,7 @@
             gap: 15px;
             max-width: 400px;
             margin: 0 auto;
+            flex-wrap: wrap;
         }
 
         .radio-option {
@@ -334,7 +159,7 @@
         .radio-option label {
             display: block;
             padding: 10px 16px;
-            background: linear-gradient(145deg, var(--primary-black), var(--secondary-black));
+            background: var(--primary-black);
             border: 1px solid var(--light-gray);
             border-radius: 8px;
             cursor: pointer;
@@ -342,70 +167,25 @@
             font-weight: 500;
             font-size: 0.9rem;
             text-align: center;
-            position: relative;
-            overflow: hidden;
             text-transform: uppercase;
             letter-spacing: 0.05em;
-            min-width: 140px;
-        }
-
-        .radio-option label::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: linear-gradient(45deg, var(--primary-orange), var(--secondary-orange));
-            border-radius: 8px;
-            z-index: -1;
-            opacity: 0;
-            transition: opacity 0.3s ease;
-        }
-
-        .radio-option label::after {
-            content: '';
-            position: absolute;
-            top: 1px;
-            left: 1px;
-            right: 1px;
-            bottom: 1px;
-            background: linear-gradient(145deg, var(--primary-black), var(--secondary-black));
-            border-radius: 7px;
-            z-index: -1;
-        }
-
-        .radio-option input[type="radio"]:checked + label::before {
-            opacity: 1;
+            min-width: 120px;
         }
 
         .radio-option input[type="radio"]:checked + label {
-            color: var(--text-white);
+            background: var(--primary-orange);
             border-color: var(--primary-orange);
-            text-shadow: 0 0 6px rgba(255, 107, 53, 0.5);
-            box-shadow: 
-                0 0 10px rgba(255, 107, 53, 0.3),
-                0 2px 8px rgba(0, 0, 0, 0.3);
-            transform: translateY(-1px);
-            animation: glow 2s ease-in-out infinite alternate;
+            color: var(--text-white);
+            box-shadow: 0 0 10px rgba(255, 107, 53, 0.3);
         }
 
         .radio-option label:hover {
-            transform: translateY(-1px);
             border-color: var(--primary-orange);
             box-shadow: 0 3px 12px rgba(255, 107, 53, 0.2);
         }
 
-        .radio-option label:hover::before {
-            opacity: 0.2;
-        }
-
-        /* Sección de empresa con animación */
         .company-section {
             display: none;
-            opacity: 0;
-            transform: translateY(20px);
-            transition: all 0.5s ease;
             margin-top: 40px;
             padding-top: 40px;
             border-top: 1px solid rgba(255, 107, 53, 0.3);
@@ -413,8 +193,6 @@
 
         .company-section.visible {
             display: block;
-            opacity: 1;
-            transform: translateY(0);
         }
 
         .company-input label {
@@ -422,14 +200,7 @@
             font-weight: 600;
             color: var(--text-white);
             margin-bottom: 15px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .company-input label::before {
-            content: '🏢';
-            font-size: 1.1rem;
+            display: block;
         }
 
         .company-input input {
@@ -447,1889 +218,374 @@
             outline: none;
             border-color: var(--primary-orange);
             box-shadow: 0 0 0 3px rgba(255, 107, 53, 0.3);
-            background: rgba(255, 107, 53, 0.05);
         }
 
-        .company-input input::placeholder {
-            color: var(--text-gray);
-        }
-
-        /* Botón de búsqueda ejecutivo */
         .search-button {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            width: 140px;
-            height: 36px;
-            margin: 30px auto;
-            background: linear-gradient(135deg, var(--primary-orange), var(--secondary-orange));
-            color: var(--text-white);
+            width: 100%;
+            padding: 20px;
+            background: linear-gradient(45deg, var(--primary-orange), var(--secondary-orange));
             border: none;
             border-radius: 15px;
-            font-size: 0.75rem;
+            color: var(--text-white);
+            font-size: 1.2rem;
             font-weight: 600;
+            font-family: 'Poppins', sans-serif;
             cursor: pointer;
             transition: all 0.3s ease;
-            position: relative;
-            overflow: hidden;
+            margin-top: 30px;
             text-transform: uppercase;
-            letter-spacing: 0.01em;
-            text-shadow: 0 0 5px rgba(255, 107, 53, 0.4);
-            animation: buttonGlow 2s ease-in-out infinite alternate;
-            box-shadow: 
-                0 0 12px rgba(255, 107, 53, 0.3),
-                0 4px 12px rgba(0, 0, 0, 0.3);
-            white-space: nowrap;
-        }
-
-        @keyframes buttonGlow {
-            from { 
-                box-shadow: 
-                    0 0 10px rgba(255, 107, 53, 0.3),
-                    0 4px 12px rgba(0, 0, 0, 0.3);
-            }
-            to { 
-                box-shadow: 
-                    0 0 15px rgba(255, 107, 53, 0.5),
-                    0 6px 15px rgba(0, 0, 0, 0.4);
-            }
-        }
-
-        .search-button::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-            transition: left 0.5s ease;
-        }
-
-        .search-button:hover::before {
-            left: 100%;
+            letter-spacing: 0.1em;
         }
 
         .search-button:hover {
-            transform: translateY(-1px);
-            box-shadow: 
-                0 0 18px rgba(255, 107, 53, 0.6),
-                0 6px 15px rgba(0, 0, 0, 0.4);
+            background: linear-gradient(45deg, var(--secondary-orange), var(--accent-orange));
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(255, 107, 53, 0.4);
         }
 
-        .search-button:active {
-            transform: translateY(-1px);
+        .search-button:disabled {
+            background: var(--dark-gray);
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
         }
 
-        /* Botón de limpiar discreto */
-        .clear-button {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            background: transparent;
-            border: 1px solid rgba(176, 176, 176, 0.3);
-            color: var(--text-gray);
-            padding: 8px 12px;
-            border-radius: 6px;
-            font-size: 0.8rem;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            opacity: 0.6;
-            font-family: 'Poppins', sans-serif;
-            font-weight: 400;
-            -webkit-backdrop-filter: blur(5px);
-            backdrop-filter: blur(5px);
-        }
-
-        .clear-button:hover {
-            opacity: 1;
-            border-color: var(--primary-orange);
-            color: var(--primary-orange);
-            background: rgba(255, 107, 53, 0.05);
-            transform: translateY(-1px);
-        }
-
-        .clear-button:active {
-            transform: translateY(0);
-        }
-
-        /* Resultados ejecutivos */
-        .results-container {
+        .results-section {
             display: none;
             margin-top: 50px;
-            gap: 25px;
-            opacity: 0;
-            transition: opacity 0.5s ease;
+            padding-top: 50px;
+            border-top: 2px solid rgba(255, 107, 53, 0.3);
         }
 
-        .results-container.visible {
+        .results-section.visible {
+            display: block;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: var(--primary-orange);
+            font-size: 1.2rem;
+        }
+
+        .error {
+            background: rgba(255, 71, 87, 0.1);
+            border: 1px solid var(--error-red);
+            border-radius: 12px;
+            padding: 20px;
+            color: var(--error-red);
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        .results-grid {
             display: grid;
-            grid-template-columns: 1fr 1fr;
-            grid-template-rows: auto auto auto;
-            opacity: 1;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            margin-top: 30px;
         }
 
         .result-card {
-            background: linear-gradient(145deg, var(--primary-black), var(--secondary-black));
-            border: 1px solid rgba(255, 107, 53, 0.3);
+            background: rgba(26, 26, 26, 0.8);
+            border: 1px solid var(--light-gray);
             border-radius: 15px;
-            padding: 30px;
-            position: relative;
-            overflow: hidden;
+            padding: 25px;
             transition: all 0.3s ease;
-        }
-
-        .result-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 4px;
-            background: linear-gradient(90deg, var(--primary-orange), var(--secondary-orange));
         }
 
         .result-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
             border-color: var(--primary-orange);
+            box-shadow: 0 5px 20px rgba(255, 107, 53, 0.2);
         }
 
-        .result-card h3 {
-            font-size: 1.4rem;
-            color: var(--text-white);
-            margin-bottom: 20px;
-            font-weight: 600;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .map-container {
-            grid-row: span 3;
-        }
-
-        #company-map {
-            width: 100%;
-            height: 450px;
-            border-radius: 12px;
-            border: 1px solid var(--light-gray);
-        }
-
-        .projects-list, .sanctions-list {
-            max-height: 350px;
-            overflow-y: auto;
-            padding-right: 10px;
-        }
-
-        .projects-list::-webkit-scrollbar, .sanctions-list::-webkit-scrollbar {
-            width: 6px;
-        }
-
-        .projects-list::-webkit-scrollbar-track, .sanctions-list::-webkit-scrollbar-track {
-            background: var(--dark-gray);
-            border-radius: 3px;
-        }
-
-        .projects-list::-webkit-scrollbar-thumb, .sanctions-list::-webkit-scrollbar-thumb {
-            background: var(--primary-orange);
-            border-radius: 3px;
-        }
-
-        .project-item, .sanction-item {
-            padding: 15px;
-            margin-bottom: 15px;
-            background: var(--dark-gray);
-            border-radius: 8px;
-            border-left: 4px solid var(--primary-orange);
-            transition: all 0.3s ease;
-        }
-
-        .project-item {
-            cursor: pointer;
-            position: relative;
-        }
-
-        .project-item::after {
-            content: '📍 Ver en mapa';
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            font-size: 0.8rem;
-            color: var(--accent-orange);
-            opacity: 0;
-            transition: opacity 0.3s ease;
-        }
-
-        .project-item:hover::after {
-            opacity: 1;
-        }
-
-        .project-item:hover, .sanction-item:hover {
-            background: var(--light-gray);
-            transform: translateX(5px);
-        }
-
-        .project-item.selected {
-            background: var(--light-gray);
-            border-left-color: var(--secondary-orange);
-            box-shadow: 0 0 10px rgba(255, 107, 53, 0.3);
-        }
-
-        .project-item strong, .sanction-item strong {
-            color: var(--primary-orange);
-            font-weight: 600;
-        }
-
-        .project-item em, .sanction-item em {
-            color: var(--text-gray);
-            font-style: normal;
-            font-weight: 500;
-        }
-
-        /* Loading animation */
-        .loading {
-            display: none;
-            text-align: center;
-            padding: 40px;
-        }
-
-        .loading.active {
-            display: block;
-        }
-
-        .spinner {
-            width: 50px;
-            height: 50px;
-            border: 3px solid var(--dark-gray);
-            border-top: 3px solid var(--primary-orange);
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin: 0 auto 20px;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
-        /* Respuesta para consultas generales */
-        .general-response {
-            display: none;
-            margin-top: 50px;
-            opacity: 0;
-            transition: opacity 0.5s ease;
-        }
-
-        .general-response.visible {
-            display: block;
-            opacity: 1;
-        }
-
-        .response-card {
-            background: linear-gradient(145deg, var(--primary-black), var(--secondary-black));
-            border: 1px solid rgba(255, 107, 53, 0.3);
-            border-radius: 15px;
-            padding: 30px;
-            position: relative;
-            overflow: hidden;
-            box-shadow: 
-                0 15px 35px rgba(0, 0, 0, 0.3),
-                0 0 20px rgba(255, 107, 53, 0.2);
-        }
-
-        .response-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 4px;
-            background: linear-gradient(90deg, var(--primary-orange), var(--secondary-orange));
-        }
-
-        .response-card h3 {
-            font-size: 1.4rem;
-            color: var(--text-white);
-            margin-bottom: 20px;
-            font-weight: 600;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            text-shadow: 0 0 10px rgba(255, 107, 53, 0.5);
-        }
-
-        .response-content {
-            color: var(--text-gray);
-            line-height: 1.8;
-            font-size: 1.1rem;
-            padding: 20px;
-            background: var(--dark-gray);
-            border-radius: 10px;
-            border-left: 4px solid var(--primary-orange);
-            animation: typewriter 2s steps(40, end);
-        }
-
-        @keyframes typewriter {
-            from { width: 0; opacity: 0; }
-            to { width: 100%; opacity: 1; }
-        }
-
-        .response-content p {
-            margin-bottom: 15px;
-        }
-
-        .response-content strong {
-            color: var(--primary-orange);
-            font-weight: 600;
-        }
-
-        .response-content em {
-            color: var(--accent-orange);
-            font-style: normal;
-        }
-
-        /* Información empresarial */
-        .company-info {
-            padding: 15px;
-            background: var(--dark-gray);
-            border-radius: 10px;
-            border-left: 4px solid var(--primary-orange);
-        }
-
-        .info-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 8px 0;
-            border-bottom: 1px solid var(--light-gray);
-        }
-
-        .info-item:last-child {
-            border-bottom: none;
-        }
-
-        .info-label {
-            font-weight: 500;
-            color: var(--text-gray);
-            min-width: 120px;
-        }
-
-        .info-value {
-            color: var(--text-white);
-            text-align: right;
-            flex: 1;
-        }
-
-        .info-value a {
-            color: var(--primary-orange);
-            text-decoration: none;
-            transition: color 0.3s ease;
-        }
-
-        .info-value a:hover {
-            color: var(--secondary-orange);
-            text-decoration: underline;
-        }
-
-        /* Información de RCA debajo del mapa */
-        .rca-info {
-            margin-top: 20px;
-            padding: 20px;
-            background: var(--dark-gray);
-            border-radius: 10px;
-            border-left: 4px solid var(--primary-orange);
-        }
-
-        .rca-info h4 {
-            font-size: 1.1rem;
-            color: var(--text-white);
-            margin-bottom: 15px;
-            font-weight: 600;
-        }
-
-        .rca-item {
-            padding: 10px;
-            margin-bottom: 10px;
-            background: var(--light-gray);
-            border-radius: 6px;
-            border-left: 3px solid var(--secondary-orange);
-        }
-
-        .rca-item strong {
-            color: var(--primary-orange);
-            font-size: 0.9rem;
-        }
-
-        .rca-count {
-            display: inline-block;
-            background: var(--primary-orange);
-            color: white;
-            padding: 4px 8px;
-            border-radius: 12px;
-            font-size: 0.8rem;
-            font-weight: 600;
-            margin-bottom: 10px;
-        }
-
-        .company-summary {
-            margin-top: 20px;
-            padding-top: 15px;
-            border-top: 1px solid var(--light-gray);
-        }
-
-        .summary-text {
-            color: var(--text-gray);
-            line-height: 1.6;
-            font-size: 0.95rem;
-            text-align: justify;
-        }
-
-        /* Footer con copyright y disclaimer */
-        .footer {
-            background: var(--primary-black);
-            border-top: 1px solid var(--light-gray);
-            padding: 20px 0;
-            margin-top: 60px;
-            position: relative;
-            z-index: 10;
-        }
-
-        .footer-content {
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 0 20px;
-            text-align: center;
-        }
-
-        .copyright {
-            font-size: 0.7rem;
-            color: var(--text-gray);
-            margin-bottom: 10px;
-            font-weight: 400;
-        }
-
-        .disclaimer {
-            font-size: 0.65rem;
-            color: var(--text-gray);
-            line-height: 1.4;
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 8px 12px;
-            background: rgba(255, 107, 53, 0.1);
-            border: 1px solid rgba(255, 107, 53, 0.3);
-            border-radius: 6px;
-        }
-
-        .disclaimer strong {
-            color: var(--primary-orange);
-        }
-
-        /* Consulta específica de empresa */
-        .company-query-response {
-            display: none;
-            margin-top: 30px;
-            opacity: 0;
-            transition: opacity 0.5s ease;
-        }
-
-        .company-query-response.visible {
-            display: block;
-            opacity: 1;
-        }
-
-        /* Referencias y fuentes */
-        .references-section {
-            display: none;
-            margin-top: 20px;
-            opacity: 0;
-            transition: opacity 0.5s ease;
-        }
-
-        .references-section.visible {
-            display: block;
-            opacity: 1;
-        }
-
-        .references-card {
-            background: linear-gradient(145deg, var(--primary-black), var(--secondary-black));
-            border: 1px solid rgba(255, 107, 53, 0.3);
-            border-radius: 15px;
-            padding: 25px;
-            position: relative;
-            overflow: hidden;
-            box-shadow: 
-                0 10px 25px rgba(0, 0, 0, 0.3),
-                0 0 15px rgba(255, 107, 53, 0.1);
-        }
-
-        .references-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 4px;
-            background: linear-gradient(90deg, var(--primary-orange), var(--secondary-orange));
-        }
-
-        .references-card h3 {
+        .card-title {
             font-size: 1.3rem;
-            color: var(--text-white);
-            margin-bottom: 20px;
             font-weight: 600;
+            color: var(--primary-orange);
+            margin-bottom: 15px;
             display: flex;
             align-items: center;
             gap: 10px;
-            text-shadow: 0 0 8px rgba(255, 107, 53, 0.4);
         }
 
-        .references-content {
+        .card-content {
             color: var(--text-gray);
             line-height: 1.6;
-            font-size: 1rem;
         }
 
-        .reference-item {
-            padding: 15px;
-            margin-bottom: 15px;
-            background: var(--dark-gray);
-            border-radius: 8px;
-            border-left: 4px solid var(--secondary-orange);
-            transition: all 0.3s ease;
-        }
-
-        .reference-item:hover {
-            background: var(--light-gray);
-            transform: translateX(3px);
-        }
-
-        .reference-title {
-            font-weight: 600;
-            color: var(--primary-orange);
-            margin-bottom: 8px;
-            font-size: 1rem;
-        }
-
-        .reference-description {
-            color: var(--text-gray);
-            margin-bottom: 10px;
-            font-size: 0.9rem;
-            line-height: 1.5;
-        }
-
-        .reference-link {
-            display: inline-block;
-            color: var(--accent-orange);
-            text-decoration: none;
-            font-size: 0.9rem;
-            font-weight: 500;
-            padding: 6px 12px;
-            background: rgba(255, 107, 53, 0.1);
-            border: 1px solid rgba(255, 107, 53, 0.3);
-            border-radius: 6px;
-            transition: all 0.3s ease;
-        }
-
-        .reference-link:hover {
-            background: rgba(255, 107, 53, 0.2);
-            border-color: var(--primary-orange);
-            color: var(--primary-orange);
-            text-decoration: none;
-            transform: translateY(-1px);
-        }
-
-        .reference-link::after {
-            content: ' 🔗';
-            font-size: 0.8rem;
-        }
-
-        /* Estilos para información empresarial */
-        .info-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 12px 0;
-            border-bottom: 1px solid rgba(176, 176, 176, 0.1);
-        }
-
-        .info-item:last-child {
-            border-bottom: none;
-        }
-
-        .info-label {
-            font-weight: 500;
-            color: var(--text-gray);
-            margin-right: 15px;
-            min-width: 120px;
-        }
-
-        .info-value {
-            color: var(--text-white);
-            font-weight: 400;
-            text-align: right;
-            flex: 1;
-        }
-
-        .info-value a {
-            color: var(--primary-orange);
-            text-decoration: none;
-            transition: color 0.3s ease;
-        }
-
-        .info-value a:hover {
-            color: var(--secondary-orange);
-        }
-
-        /* Estilos para RCA */
-        .rca-count {
-            background: var(--light-gray);
-            padding: 12px;
-            border-radius: 8px;
-            margin-bottom: 15px;
-            font-weight: 600;
-            color: var(--primary-orange);
-            text-align: center;
-        }
-
-        .rca-item {
-            padding: 15px;
-            margin-bottom: 15px;
-            background: var(--dark-gray);
-            border-radius: 8px;
-            border-left: 4px solid var(--success-green);
-            transition: all 0.3s ease;
-        }
-
-        .rca-item:hover {
-            background: var(--light-gray);
-            transform: translateX(3px);
-        }
-
-        .summary-text {
-            color: var(--text-gray);
-            line-height: 1.6;
-            font-size: 1rem;
-        }
-
-        .summary-text p {
-            margin-bottom: 15px;
-        }
-
-        .summary-text strong {
-            color: var(--primary-orange);
-        }
-
-        .summary-text em {
-            color: var(--text-gray);
-            font-style: italic;
-        }
-
-        /* Responsive design */
         @media (max-width: 768px) {
             .container {
-                padding: 20px 15px;
-            }
-            
-            .main-title {
-                font-size: 3rem;
-            }
-            
-            .system-status {
-                flex-direction: column;
-                gap: 15px;
-            }
-            
-            .radio-group {
-                flex-direction: column;
-                align-items: center;
-                gap: 10px;
-            }
-            
-            .results-container.visible {
-                grid-template-columns: 1fr;
-                grid-template-rows: auto;
-            }
-            
-            .map-container {
-                grid-row: auto;
+                padding: 20px 10px;
             }
             
             .main-panel {
                 padding: 30px 20px;
             }
             
-            .references-card {
-                padding: 20px 15px;
+            .radio-group {
+                flex-direction: column;
+                align-items: center;
             }
             
-            .reference-item {
-                padding: 12px;
-            }
-            
-            .reference-title {
-                font-size: 0.9rem;
-            }
-            
-            .reference-description {
-                font-size: 0.8rem;
-            }
-            
-            .reference-link {
-                font-size: 0.8rem;
-                padding: 5px 10px;
-            }
-            
-            .clear-button {
-                top: 15px;
-                right: 15px;
-                padding: 6px 10px;
-                font-size: 0.75rem;
+            .radio-option {
+                width: 200px;
             }
         }
     </style>
 </head>
 <body>
-    <div class="bg-animation"></div>
-    <div class="dynamic-bars">
-        <div class="bar"></div>
-        <div class="bar"></div>
-        <div class="bar"></div>
-        <div class="bar"></div>
-    </div>
-
     <div class="container">
-        <header class="header">
-            <div class="brand-container">
-                <h1 class="main-title">MERLIN</h1>
-                <p class="subtitle">Asesor Legal</p>
-            </div>
-            
-            <div class="system-status">
-                <div class="status-item">
-                    <div class="status-bar">
-                        <div class="status-fill" style="--fill-width: 98%;"></div>
-                    </div>
-                    <div class="status-label">Ambitus</div>
-                </div>
-                <div class="status-item">
-                    <div class="status-bar">
-                        <div class="status-fill" style="--fill-width: 85%;"></div>
-                    </div>
-                    <div class="status-label">Lustitia</div>
-                </div>
-                <div class="status-item">
-                    <div class="status-bar">
-                        <div class="status-fill" style="--fill-width: 92%;"></div>
-                    </div>
-                    <div class="status-label">Scientia</div>
-                </div>
-            </div>
-        </header>
+        <div class="header">
+            <h1 class="main-title">MERLIN</h1>
+            <p class="subtitle">Asesor Legal Ambiental Inteligente</p>
+        </div>
 
-                <main class="main-panel">
-            <!-- Botón discreto para limpiar campos -->
-            <button type="button" class="clear-button" id="clear-button" title="Limpiar todos los campos">
-                🗑️ Limpiar
-            </button>
-            
-        <form id="analysis-form">
-                <section class="search-section">
-                    <label for="query-box" class="search-label">
-                        Consulta
+        <div class="main-panel">
+            <form id="search-form">
+                <div class="search-section">
+                    <label class="search-label" for="query">
+                        🔍 Ingresa tu consulta legal ambiental
                     </label>
-                    <div class="search-container">
-                        <textarea 
-                            id="query-box" 
-                            name="query_box" 
-                            class="search-bar"
-                            placeholder="Ingrese su consulta y MERLIN te responderá. "
-                        ></textarea>
-                    </div>
-                </section>
+                    <textarea 
+                        id="query" 
+                        name="query" 
+                        class="search-bar" 
+                        placeholder="Ejemplo: ¿Cuáles son los requisitos para obtener una RCA? ¿Qué sanciones puede recibir una empresa por incumplimiento ambiental?"
+                        required
+                    ></textarea>
+                </div>
 
-                <section class="query-options">
-                    <label class="options-label">Tipo de Análisis</label>
+                <div class="query-options">
+                    <label class="options-label">⚙️ Tipo de consulta</label>
                     <div class="radio-group">
                         <div class="radio-option">
                             <input type="radio" id="general" name="query_type" value="general" checked>
-                            <label for="general">Análisis General</label>
+                            <label for="general">General</label>
                         </div>
                         <div class="radio-option">
                             <input type="radio" id="empresa" name="query_type" value="empresa">
-                            <label for="empresa">Análisis Empresarial</label>
+                            <label for="empresa">Empresa</label>
+                        </div>
+                        <div class="radio-option">
+                            <input type="radio" id="proyecto" name="query_type" value="proyecto">
+                            <label for="proyecto">Proyecto</label>
                         </div>
                     </div>
-                </section>
+                </div>
 
-                <section id="company-section" class="company-section">
+                <div class="company-section" id="company-section">
                     <div class="company-input">
-                        <label for="company-name">Empresa a buscar</label>
+                        <label for="company-name">🏢 Nombre de la empresa</label>
                         <input 
                             type="text" 
                             id="company-name" 
                             name="company_name"
-                            placeholder="Ingrese el nombre de fantasia o la razón social de la empresa a analizar..."
+                            placeholder="Ingresa el nombre de la empresa"
                         >
                     </div>
-                </section>
+                </div>
 
-                <button type="submit" class="search-button">
-                    Ejecutar Análisis
+                <button type="submit" class="search-button" id="search-btn">
+                    Consultar
                 </button>
             </form>
 
-            <div class="loading" id="loading">
-                <div class="spinner"></div>
-                <p>Procesando análisis legal...</p>
-            </div>
-
-            <!-- Respuesta para consultas generales -->
-            <div id="general-response" class="general-response">
-                <div class="response-card">
-                    <h3>📋 Respuesta del Asesor Legal</h3>
-                    <div id="response-content" class="response-content">
-                        <!-- El contenido se carga dinámicamente -->
-                    </div>
-                </div>
-            </div>
-
-            <div id="results-container" class="results-container">
-                <div class="result-card map-container">
-                    <h3>📍 Geolocalización</h3>
-                    <div id="company-map"></div>
-                    
-                    <!-- Cuadro de RCA debajo del mapa -->
-                    <div class="rca-info" id="rca-info">
-                        <h4>📜 Resoluciones de Calificación Ambiental (RCA)</h4>
-                        <div id="rca-content">
-                            <!-- Contenido de RCA se carga dinámicamente -->
-                        </div>
-                        
-                        <div class="company-summary" id="company-summary">
-                            <h4>📊 Reseña Empresarial</h4>
-                            <div id="summary-content">
-                                <!-- Reseña se carga dinámicamente -->
-                            </div>
-                        </div>
-                    </div>
+            <div class="results-section" id="results-section">
+                <div id="loading" class="loading" style="display: none;">
+                    🔄 Procesando consulta...
                 </div>
                 
-                <div class="result-card">
-                    <h3>📊 Proyectos SEIA</h3>
-                    <div id="projects-list" class="projects-list">
-                        <!-- Proyectos se cargan dinámicamente -->
-                    </div>
-                </div>
+                <div id="error" class="error" style="display: none;"></div>
                 
-                <div class="result-card">
-                    <h3>⚠️ Historial SNIFA</h3>
-                    <div id="sanctions-list" class="sanctions-list">
-                        <!-- Sanciones se cargan dinámicamente -->
-                    </div>
-                </div>
-                
-                <div class="result-card">
-                    <h3>🏢 Información Empresarial</h3>
-                    <div id="company-info" class="company-info">
-                        <!-- Información de la empresa se carga dinámicamente -->
-                    </div>
-                </div>
+                <div id="results-content" class="results-grid"></div>
             </div>
-            
-            <!-- Consulta específica de empresa -->
-            <div id="company-query-response" class="company-query-response">
-                <div class="response-card">
-                    <h3>💼 Consulta Específica Empresarial</h3>
-                    <div id="company-query-content" class="response-content">
-                        <!-- El contenido se carga dinámicamente -->
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Referencias y fuentes -->
-            <div id="references-section" class="references-section">
-                <div class="references-card">
-                    <h3>📚 Referencias y Fuentes</h3>
-                    <div id="references-content" class="references-content">
-                        <!-- Las referencias se cargan dinámicamente -->
-                    </div>
-                </div>
-            </div>
-        </main>
-    </div>
-    
-    <!-- Footer con copyright y disclaimer -->
-    <footer class="footer">
-        <div class="footer-content">
-            <p class="copyright">© 2024 MERLIN - Asesor Legal. Todos los derechos reservados.</p>
-            <p class="disclaimer">
-                ⚠️ <strong>Importante:</strong> El usuario siempre debe verificar las respuestas entregadas por MERLIN. 
-                Esta herramienta proporciona información de carácter orientativo y no constituye asesoría legal profesional. 
-                Para decisiones importantes, consulte con un abogado especializado.
-            </p>
         </div>
-    </footer>
+    </div>
 
     <script>
-        let map = null;
+        // Variables globales
+        let currentQuery = '';
+        let currentQueryType = '';
 
-        // Manejo del botón de limpiar
-        document.getElementById('clear-button').addEventListener('click', function() {
-            // Limpiar campos de texto
-            document.getElementById('query-box').value = '';
-            document.getElementById('company-name').value = '';
-            
-            // Resetear radio buttons a "general"
-            document.getElementById('general').checked = true;
-            document.getElementById('empresa').checked = false;
-            
-            // Ocultar secciones
-            document.getElementById('company-section').classList.remove('visible');
-            document.getElementById('results-container').classList.remove('visible');
-            document.getElementById('general-response').classList.remove('visible');
-            document.getElementById('company-query-response').classList.remove('visible');
-            document.getElementById('references-section').classList.remove('visible');
-            
-            // Limpiar mapa si existe
-            if (map && window.currentMarker) {
-                map.removeLayer(window.currentMarker);
-                window.currentMarker = null;
-            }
-            
-            // Efecto visual sutil
-            this.style.transform = 'scale(0.95)';
-            setTimeout(() => {
-                this.style.transform = 'scale(1)';
-            }, 150);
+        // Inicialización
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeForm();
         });
 
-        // Manejo de cambios en tipo de consulta
-        document.querySelectorAll('input[name="query_type"]').forEach(radio => {
-            radio.addEventListener('change', function() {
-                const companySection = document.getElementById('company-section');
-                const resultsContainer = document.getElementById('results-container');
-                const generalResponse = document.getElementById('general-response');
-                
-                if (this.value === 'empresa') {
-                    setTimeout(() => {
+        function initializeForm() {
+            const form = document.getElementById('search-form');
+            const queryTypeInputs = document.querySelectorAll('input[name="query_type"]');
+            const companySection = document.getElementById('company-section');
+
+            // Manejar cambio de tipo de consulta
+            queryTypeInputs.forEach(input => {
+                input.addEventListener('change', function() {
+                    if (this.value === 'empresa' || this.value === 'proyecto') {
                         companySection.classList.add('visible');
-                    }, 100);
-                    generalResponse.classList.remove('visible');
-                } else {
-                    companySection.classList.remove('visible');
-                    resultsContainer.classList.remove('visible');
-                    generalResponse.classList.remove('visible');
-                }
+                        document.getElementById('company-name').required = true;
+                    } else {
+                        companySection.classList.remove('visible');
+                        document.getElementById('company-name').required = false;
+                    }
+                });
             });
-        });
 
-        // Manejo del formulario
-        document.getElementById('analysis-form').addEventListener('submit', function(e) {
-            e.preventDefault();
-            
+            // Manejar envío del formulario
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+                handleFormSubmit();
+            });
+        }
+
+        async function handleFormSubmit() {
+            const query = document.getElementById('query').value.trim();
             const queryType = document.querySelector('input[name="query_type"]:checked').value;
-            const query = document.getElementById('query-box').value;
-            
-            if (queryType === 'empresa') {
-                const companyName = document.getElementById('company-name').value;
-                if (companyName.trim()) {
-                    executeCompanyAnalysis(companyName, query);
-                } else {
-                    alert('Por favor, ingrese la razón social de la empresa.');
-                }
-            } else {
-                if (!query.trim()) {
-                    alert('Por favor, ingrese una consulta.');
-                    return;
-                }
-                executeGeneralAnalysis(query);
-            }
-        });
+            const companyName = document.getElementById('company-name').value.trim();
 
-        async function executeCompanyAnalysis(companyName, query) {
-            showLoading();
-            
+            if (!query) {
+                showError('Por favor ingresa una consulta');
+                return;
+            }
+
+            if ((queryType === 'empresa' || queryType === 'proyecto') && !companyName) {
+                showError('Por favor ingresa el nombre de la empresa');
+                return;
+            }
+
+            currentQuery = query;
+            currentQueryType = queryType;
+
+            showLoading(true);
+            hideError();
+            showResults(true);
+
             try {
-                const formData = new FormData();
-                formData.append('company_name', companyName);
-                formData.append('query_box', query || '');
-                
-                const response = await fetch('/analisis_empresarial/', {
+                const response = await fetch('/consulta', {
                     method: 'POST',
-                    body: formData
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        query: query,
+                        query_type: queryType,
+                        company_name: companyName || null
+                    })
                 });
-                
+
+                if (!response.ok) {
+                    throw new Error(`Error ${response.status}: ${response.statusText}`);
+                }
+
                 const data = await response.json();
-                
-                if (data.success) {
-                    hideLoading();
-                    showResults();
-                    
-                    if (!map) {
-                        initializeMap();
-                    }
-                    
-                    loadCompanyDataFromBackend(data, companyName, query);
-                } else {
-                    hideLoading();
-                    alert('Error: ' + data.error);
-                }
+                displayResults(data);
+
             } catch (error) {
-                hideLoading();
-                alert('Error al conectar con el servidor: ' + error.message);
+                console.error('Error:', error);
+                showError('Error al procesar la consulta: ' + error.message);
+            } finally {
+                showLoading(false);
             }
         }
 
-        async function executeGeneralAnalysis(query) {
-            showLoading();
+        function displayResults(data) {
+            const resultsContent = document.getElementById('results-content');
             
-            try {
-                const formData = new FormData();
-                formData.append('query_box', query);
-                
-                const response = await fetch('/analisis_general/', {
-                    method: 'POST',
-                    body: formData
-                });
-                
-                const data = await response.json();
-                
-                if (data.success) {
-                    hideLoading();
-                    showGeneralResponse(data.respuesta);
-                    
-                    // Mostrar referencias
-                    const referencesSection = document.getElementById('references-section');
-                    const referencesContent = document.getElementById('references-content');
-                    
-                    if (data.referencias && data.referencias.length > 0) {
-                        referencesContent.innerHTML = data.referencias.map(ref => `
-                            <div class="reference-item">
-                                <div class="reference-title">${ref.title}</div>
-                                <div class="reference-description">${ref.description}</div>
-                                <a href="${ref.url}" target="_blank" class="reference-link">Ir a la fuente</a>
-                            </div>
-                        `).join('');
-                        referencesSection.classList.add('visible');
-                    }
-                } else {
-                    hideLoading();
-                    alert('Error: ' + data.error);
-                }
-            } catch (error) {
-                hideLoading();
-                alert('Error al conectar con el servidor: ' + error.message);
+            if (!data || !data.respuesta) {
+                showError('No se recibió una respuesta válida del servidor');
+                return;
             }
-        }
 
-        function showGeneralResponse(query) {
-            const generalResponse = document.getElementById('general-response');
-            const responseContent = document.getElementById('response-content');
-            
-            // Ocultar resultados empresariales si están visibles
-            document.getElementById('results-container').classList.remove('visible');
-            
-            // Generar respuesta basada en palabras clave de la consulta
-            const response = generateLegalResponse(query);
-            
-            responseContent.innerHTML = response;
-            generalResponse.classList.add('visible');
-        }
+            let html = `
+                <div class="result-card">
+                    <div class="card-title">
+                        📋 Respuesta Legal
+                    </div>
+                    <div class="card-content">
+                        ${formatResponse(data.respuesta)}
+                    </div>
+                </div>
+            `;
 
-        function generateLegalResponse(query) {
-            const lowerQuery = query.toLowerCase();
-            
-            // Respuestas predefinidas basadas en palabras clave
-            if (lowerQuery.includes('contrato') || lowerQuery.includes('acuerdo')) {
-                return `
-                    <p><strong>Análisis Legal - Contratos:</strong></p>
-                    <p>Basado en su consulta sobre contratos, le informo que:</p>
-                    <p>• <em>Elementos esenciales:</em> Todo contrato debe contener objeto, causa y consentimiento válido.</p>
-                    <p>• <em>Cumplimiento:</em> Las partes están obligadas a cumplir lo pactado de buena fe.</p>
-                    <p>• <em>Incumplimiento:</em> En caso de incumplimiento, existen remedios legales como la resolución, cumplimiento forzado o indemnización de perjuicios.</p>
-                    <p><strong>Recomendación:</strong> Siempre revise las cláusulas de terminación y las condiciones de cumplimiento antes de firmar.</p>
-                `;
-            } else if (lowerQuery.includes('laboral') || lowerQuery.includes('trabajo') || lowerQuery.includes('empleado')) {
-                return `
-                    <p><strong>Análisis Legal - Derecho Laboral:</strong></p>
-                    <p>Respecto a su consulta laboral:</p>
-                    <p>• <em>Derechos fundamentales:</em> Todo trabajador tiene derecho a un salario justo, jornada limitada y condiciones seguras de trabajo.</p>
-                    <p>• <em>Despido:</em> Debe existir causa justificada y seguir el procedimiento legal establecido.</p>
-                    <p>• <em>Indemnizaciones:</em> Varían según el tipo de contrato y la causa del término de la relación laboral.</p>
-                    <p><strong>Importante:</strong> El Código del Trabajo protege al trabajador como parte más débil de la relación.</p>
-                `;
-            } else if (lowerQuery.includes('sociedad') || lowerQuery.includes('empresa') || lowerQuery.includes('comercial')) {
-                return `
-                    <p><strong>Análisis Legal - Derecho Comercial:</strong></p>
-                    <p>En relación a su consulta comercial:</p>
-                    <p>• <em>Tipos de sociedades:</em> Sociedades de responsabilidad limitada, anónimas, por acciones, etc.</p>
-                    <p>• <em>Responsabilidad:</em> Varía según el tipo de sociedad elegida.</p>
-                    <p>• <em>Constitución:</em> Requiere escritura pública e inscripción en el Registro de Comercio.</p>
-                    <p><strong>Consejo:</strong> Evalúe cuidadosamente el tipo de sociedad más conveniente para su actividad comercial.</p>
-                `;
-            } else if (lowerQuery.includes('herencia') || lowerQuery.includes('testamento') || lowerQuery.includes('sucesión')) {
-                return `
-                    <p><strong>Análisis Legal - Derecho Sucesorio:</strong></p>
-                    <p>Sobre su consulta de herencias:</p>
-                    <p>• <em>Legítima:</em> Porción de bienes que la ley asigna a ciertos herederos.</p>
-                    <p>• <em>Testamento:</em> Permite disponer libremente de la cuarta de libre disposición.</p>
-                    <p>• <em>Proceso:</em> La sucesión puede ser testada o intestada según exista o no testamento.</p>
-                    <p><strong>Recomendación:</strong> Es conveniente planificar la sucesión mediante testamento para evitar conflictos futuros.</p>
-                `;
-            } else {
-                return `
-                    <p><strong>Análisis Legal General:</strong></p>
-                    <p>He procesado su consulta y puedo proporcionarle el siguiente análisis:</p>
-                    <p>• <em>Marco normativo:</em> Su situación se encuentra regulada por la legislación chilena vigente.</p>
-                    <p>• <em>Procedimiento recomendado:</em> Reúna toda la documentación relevante y evalúe las opciones legales disponibles.</p>
-                    <p>• <em>Consideraciones importantes:</em> Tenga en cuenta los plazos legales y requisitos formales aplicables.</p>
-                    <p><strong>Próximos pasos:</strong> Le sugiero solicitar una consulta personalizada para analizar los detalles específicos de su caso.</p>
-                    <p><em>Nota:</em> Esta respuesta es de carácter informativo general. Para asesoría específica, consulte con un abogado especializado.</p>
+            // Agregar información de empresa si está disponible
+            if (data.empresa_info) {
+                html += `
+                    <div class="result-card">
+                        <div class="card-title">
+                            🏢 Información de la Empresa
+                        </div>
+                        <div class="card-content">
+                            ${formatCompanyInfo(data.empresa_info)}
+                        </div>
+                    </div>
                 `;
             }
-        }
 
-        function showLoading() {
-            document.getElementById('loading').classList.add('active');
-        }
-
-        function hideLoading() {
-            document.getElementById('loading').classList.remove('active');
-        }
-
-        function showResults() {
-            const resultsContainer = document.getElementById('results-container');
-            resultsContainer.classList.add('visible');
-        }
-
-        function initializeMap() {
-            map = L.map('company-map').setView([-33.4489, -70.6693], 10);
-            
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '© OpenStreetMap contributors'
-            }).addTo(map);
-        }
-
-        function loadCompanyData(companyName, query = '') {
-            // Coordenadas de la casa central (dirección principal de la empresa)
-            const mainOfficeLocation = {
-                lat: -33.4489 + (Math.random() - 0.5) * 0.02,
-                lng: -70.6693 + (Math.random() - 0.5) * 0.02,
-                address: "Av. Providencia 1234, Providencia, Santiago"
-            };
-            
-            // Simular geolocalización de casa central
-            if (map) {
-                map.setView([mainOfficeLocation.lat, mainOfficeLocation.lng], 15);
-                
-                // Limpiar marcadores
-                map.eachLayer(layer => {
-                    if (layer instanceof L.Marker) {
-                        map.removeLayer(layer);
-                    }
-                });
-                
-                // Crear popup con información de casa central
-                let popupContent = `
-                    <div style="text-align: center; padding: 10px;">
-                        <strong style="color: #ff6b35;">${companyName}</strong><br>
-                        <em style="color: #ffb366;">Casa Central</em><br>
-                        <small>${mainOfficeLocation.address}</small><br>
-                        <small>Lat: ${mainOfficeLocation.lat.toFixed(4)}, Lng: ${mainOfficeLocation.lng.toFixed(4)}</small>
+            // Agregar referencias si están disponibles
+            if (data.referencias && data.referencias.length > 0) {
+                html += `
+                    <div class="result-card">
+                        <div class="card-title">
+                            🔗 Referencias Legales
+                        </div>
+                        <div class="card-content">
+                            ${formatReferences(data.referencias)}
+                        </div>
+                    </div>
                 `;
-                
-                if (query && query.trim()) {
-                    popupContent += `<br><br><em style="color: #ffb366;">Consulta específica realizada</em>`;
-                }
-                
-                popupContent += `</div>`;
-                
-                // Agregar marcador de casa central
-                window.currentMarker = L.marker([mainOfficeLocation.lat, mainOfficeLocation.lng])
-                    .addTo(map)
-                    .bindPopup(popupContent)
-                    .openPopup();
             }
-            
-            loadProjectsData(companyName, query);
-            loadSanctionsData(companyName, query);
-            loadCompanyInfo(companyName);
-            loadRCAData(companyName);
-            
-            // Si hay consulta específica, mostrar respuesta y referencias
-            if (query && query.trim()) {
-                loadCompanyQueryResponse(companyName, query);
-                loadReferences(query);
-            }
+
+            resultsContent.innerHTML = html;
         }
 
-        function loadProjectsData(companyName, query = '') {
-            const projectsList = document.getElementById('projects-list');
-            
-            const projects = [
-                {
-                    nombre: "Sistema de Tratamiento de Efluentes Industriales",
-                    tipo: "Estudio de Impacto Ambiental",
-                    estado: "Aprobado",
-                    fecha: "2023-08-15",
-                    codigo: "EIA-2023-001",
-                    direccion: "Av. Industrial 567, Maipú, Santiago",
-                    lat: -33.5089,
-                    lng: -70.7593,
-                    linkSeia: "https://seia.sea.gob.cl/expediente/ficha/fichaTramite.php?modo=ficha&id_expediente=2167845123"
-                },
-                {
-                    nombre: "Modernización de Planta de Procesamiento",
-                    tipo: "Declaración de Impacto Ambiental",
-                    estado: "En evaluación",
-                    fecha: "2023-11-22",
-                    codigo: "DIA-2023-045",
-                    direccion: "Camino Los Nogales 890, Pudahuel, Santiago",
-                    lat: -33.4691,
-                    lng: -70.7891,
-                    linkSeia: "https://seia.sea.gob.cl/expediente/ficha/fichaTramite.php?modo=ficha&id_expediente=2167845124"
-                },
-                {
-                    nombre: "Implementación de Gestión de Residuos Sólidos",
-                    tipo: "Declaración de Impacto Ambiental",
-                    estado: "Aprobado",
-                    fecha: "2022-12-10",
-                    codigo: "DIA-2022-089",
-                    direccion: "Av. Santa Rosa 2456, San Bernardo, Santiago",
-                    lat: -33.5891,
-                    lng: -70.6892,
-                    linkSeia: "https://seia.sea.gob.cl/expediente/ficha/fichaTramite.php?modo=ficha&id_expediente=2167845125"
-                },
-                {
-                    nombre: "Ampliación de Capacidad Operacional",
-                    tipo: "Estudio de Impacto Ambiental",
-                    estado: "Observado",
-                    fecha: "2023-05-30",
-                    codigo: "EIA-2023-023",
-                    direccion: "Av. Vicuña Mackenna 3789, La Florida, Santiago",
-                    lat: -33.5392,
-                    lng: -70.5893,
-                    linkSeia: "https://seia.sea.gob.cl/expediente/ficha/fichaTramite.php?modo=ficha&id_expediente=2167845126"
-                }
-            ];
-            
-            let headerText = projects.length > 0 ? '' : '';
-            if (query && query.trim()) {
-                headerText = `<div style="background: var(--light-gray); padding: 10px; border-radius: 5px; margin-bottom: 15px; font-size: 0.9rem; color: var(--accent-orange);">
-                    📋 Búsqueda específica realizada para: "${query}"
-                </div>`;
-            } else {
-                headerText = `<div style="background: var(--light-gray); padding: 10px; border-radius: 5px; margin-bottom: 15px; font-size: 0.9rem; color: var(--text-gray);">
-                    📋 Búsqueda general por empresa sin consulta específica
-                </div>`;
+        function formatResponse(response) {
+            // Convertir saltos de línea a HTML
+            return response.replace(/\n/g, '<br>');
+        }
+
+        function formatCompanyInfo(companyInfo) {
+            let html = '';
+            for (const [key, value] of Object.entries(companyInfo)) {
+                html += `<p><strong>${key}:</strong> ${value}</p>`;
             }
-            
-            projectsList.innerHTML = headerText + projects.map((project, index) => `
-                <div class="project-item" onclick="selectProject(${index})" data-project-index="${index}">
-                    <strong>${project.nombre}</strong><br>
-                    <em>Tipo:</em> ${project.tipo}<br>
-                    <em>Estado:</em> <span style="color: ${getStatusColor(project.estado)}">${project.estado}</span><br>
-                    <em>Fecha:</em> ${project.fecha}<br>
-                    <em>Código:</em> ${project.codigo}<br>
-                    <em>Dirección:</em> ${project.direccion}<br>
-                    <a href="${project.linkSeia}" target="_blank" onclick="event.stopPropagation()" style="color: var(--primary-orange); text-decoration: none; font-size: 0.9rem; margin-top: 8px; display: inline-block;">
-                        📋 Ver expediente en SEIA →
+            return html;
+        }
+
+        function formatReferences(references) {
+            return references.map(ref => `
+                <div style="margin-bottom: 15px; padding: 10px; background: rgba(255, 107, 53, 0.1); border-radius: 8px;">
+                    <strong>${ref.title}</strong><br>
+                    <em>${ref.description}</em><br>
+                    <a href="${ref.url}" target="_blank" style="color: var(--primary-orange); text-decoration: none;">
+                        Ver fuente →
                     </a>
                 </div>
             `).join('');
-            
-            // Guardar los proyectos globalmente para poder acceder desde selectProject
-            window.currentProjects = projects;
         }
 
-        function loadSanctionsData(companyName, query = '') {
-            const sanctionsList = document.getElementById('sanctions-list');
-            
-            const sanctions = [
-                {
-                    tipo: "Incumplimiento de Normas de Emisión",
-                    monto: "25 UTM",
-                    fecha: "2023-06-15",
-                    estado: "Pagada",
-                    resolucion: "RES-2023-0234"
-                },
-                {
-                    tipo: "Gestión Inadecuada de Residuos Peligrosos",
-                    monto: "18 UTM",
-                    fecha: "2022-11-08",
-                    estado: "Apelada",
-                    resolucion: "RES-2022-0567"
-                },
-                {
-                    tipo: "Amonestación por Reporte Tardío",
-                    monto: "N/A",
-                    fecha: "2023-02-20",
-                    estado: "Cerrada",
-                    resolucion: "RES-2023-0089"
-                }
-            ];
-            
-            if (sanctions.length === 0) {
-                sanctionsList.innerHTML = '<div class="sanction-item">No se encontraron infracciones registradas en el sistema.</div>';
+        function showLoading(show) {
+            const loading = document.getElementById('loading');
+            loading.style.display = show ? 'block' : 'none';
+        }
+
+        function showError(message) {
+            const errorDiv = document.getElementById('error');
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+        }
+
+        function hideError() {
+            const errorDiv = document.getElementById('error');
+            errorDiv.style.display = 'none';
+        }
+
+        function showResults(show) {
+            const resultsSection = document.getElementById('results-section');
+            if (show) {
+                resultsSection.classList.add('visible');
             } else {
-                sanctionsList.innerHTML = sanctions.map(sanction => `
-                    <div class="sanction-item">
-                        <strong>${sanction.tipo}</strong><br>
-                        <em>Monto:</em> ${sanction.monto}<br>
-                        <em>Fecha:</em> ${sanction.fecha}<br>
-                        <em>Estado:</em> <span style="color: ${getStatusColor(sanction.estado)}">${sanction.estado}</span><br>
-                        <em>Resolución:</em> ${sanction.resolucion}
-                    </div>
-                `).join('');
+                resultsSection.classList.remove('visible');
             }
         }
-
-        function selectProject(projectIndex) {
-            const project = window.currentProjects[projectIndex];
-            
-            if (map && project) {
-                // Cambiar vista del mapa a la ubicación del proyecto
-                map.setView([project.lat, project.lng], 16);
-                
-                // Remover marcador anterior
-                if (window.currentMarker) {
-                    map.removeLayer(window.currentMarker);
-                }
-                
-                // Crear popup para el proyecto
-                const popupContent = `
-                    <div style="text-align: center; padding: 10px;">
-                        <strong style="color: #ff6b35;">${project.nombre}</strong><br>
-                        <em style="color: #ffb366;">${project.tipo}</em><br>
-                        <small>${project.direccion}</small><br>
-                        <small>Estado: <span style="color: ${getStatusColor(project.estado)}">${project.estado}</span></small><br>
-                        <small>Código: ${project.codigo}</small>
-                    </div>
-                `;
-                
-                // Agregar nuevo marcador
-                window.currentMarker = L.marker([project.lat, project.lng])
-                    .addTo(map)
-                    .bindPopup(popupContent)
-                    .openPopup();
-                
-                // Actualizar estilos de selección
-                document.querySelectorAll('.project-item').forEach(item => {
-                    item.classList.remove('selected');
-                });
-                document.querySelector(`[data-project-index="${projectIndex}"]`).classList.add('selected');
-            }
-        }
-
-        function loadCompanyInfo(companyName) {
-            const companyInfo = document.getElementById('company-info');
-            
-            // Datos simulados de la empresa
-            const companyData = {
-                razonSocial: companyName,
-                nombreFantasia: companyName.replace(' S.A.', ' Corporation'),
-                rubro: "Servicios Ambientales y Tratamiento de Residuos",
-                paginaWeb: "www." + companyName.toLowerCase().replace(/\s/g, '') + ".cl",
-                telefono: "+56 2 2234 5678",
-                email: "contacto@" + companyName.toLowerCase().replace(/\s/g, '') + ".cl"
-            };
-            
-            companyInfo.innerHTML = `
-                <div class="info-item">
-                    <span class="info-label">Razón Social:</span>
-                    <span class="info-value">${companyData.razonSocial}</span>
-                </div>
-                <div class="info-item">
-                    <span class="info-label">Nombre Fantasía:</span>
-                    <span class="info-value">${companyData.nombreFantasia}</span>
-                </div>
-                <div class="info-item">
-                    <span class="info-label">Rubro:</span>
-                    <span class="info-value">${companyData.rubro}</span>
-                </div>
-                <div class="info-item">
-                    <span class="info-label">Página Web:</span>
-                    <span class="info-value"><a href="https://${companyData.paginaWeb}" target="_blank">${companyData.paginaWeb}</a></span>
-                </div>
-                <div class="info-item">
-                    <span class="info-label">Teléfono:</span>
-                    <span class="info-value">${companyData.telefono}</span>
-                </div>
-                <div class="info-item">
-                    <span class="info-label">Email:</span>
-                    <span class="info-value"><a href="mailto:${companyData.email}">${companyData.email}</a></span>
-                </div>
-            `;
-        }
-
-        function loadRCAData(companyName) {
-            const rcaContent = document.getElementById('rca-content');
-            const summaryContent = document.getElementById('summary-content');
-            
-            // Datos simulados de RCA vigentes
-            const rcaData = [
-                {
-                    nombre: "RCA N° 0245/2023 - Sistema de Tratamiento de Efluentes Industriales",
-                    vigente: true,
-                    fechaVigencia: "2023-08-15",
-                    fechaVencimiento: "2028-08-15"
-                },
-                {
-                    nombre: "RCA N° 0089/2022 - Implementación de Gestión de Residuos Sólidos",
-                    vigente: true,
-                    fechaVigencia: "2022-12-10",
-                    fechaVencimiento: "2027-12-10"
-                },
-                {
-                    nombre: "RCA N° 0156/2021 - Modernización de Infraestructura Productiva",
-                    vigente: true,
-                    fechaVigencia: "2021-09-22",
-                    fechaVencimiento: "2026-09-22"
-                }
-            ];
-            
-            const vigentesCount = rcaData.filter(rca => rca.vigente).length;
-            
-            // Renderizar información de RCA
-            rcaContent.innerHTML = `
-                <div class="rca-count">
-                    ${vigentesCount} RCA${vigentesCount !== 1 ? 's' : ''} vigente${vigentesCount !== 1 ? 's' : ''}
-                </div>
-                ${rcaData.filter(rca => rca.vigente).map(rca => `
-                    <div class="rca-item">
-                        <strong>${rca.nombre}</strong><br>
-                        <em>Vigencia:</em> ${rca.fechaVigencia} - ${rca.fechaVencimiento}<br>
-                        <em>Estado:</em> <span style="color: #00ff88">Vigente</span>
-                    </div>
-                `).join('')}
-            `;
-            
-            // Generar reseña empresarial basada en el SEIA
-            const companyDescription = generateCompanyDescription(companyName);
-            summaryContent.innerHTML = `
-                <div class="summary-text">
-                    ${companyDescription}
-                </div>
-            `;
-        }
-
-        function generateCompanyDescription(companyName) {
-            // Reseña simulada basada en información típica del SEIA
-            return `
-                <p><strong>${companyName}</strong> es una empresa del sector ambiental que opera en la Región Metropolitana, 
-                especializada en servicios de tratamiento de efluentes industriales y gestión integral de residuos.</p>
-                
-                <p>Según los registros del SEIA, la empresa cuenta con <strong>4 proyectos evaluados</strong> en el sistema, 
-                de los cuales <strong>3 se encuentran aprobados</strong> y <strong>1 en proceso de evaluación</strong>. 
-                Sus principales actividades incluyen el tratamiento de aguas residuales industriales, la gestión de residuos sólidos 
-                y la implementación de tecnologías de control ambiental.</p>
-                
-                <p>La empresa mantiene <strong>3 RCA vigentes</strong> que le permiten operar sus instalaciones de tratamiento 
-                en diferentes comunas de Santiago. Ha demostrado un <strong>historial de cumplimiento ambiental</strong> con 
-                incidentes menores que han sido debidamente regularizados.</p>
-                
-                <p><em>Fuente: Información extraída del Sistema de Evaluación de Impacto Ambiental (SEIA) y registros del 
-                Servicio Nacional de Fiscalización Ambiental (SMA).</em></p>
-            `;
-        }
-
-        function loadCompanyQueryResponse(companyName, query) {
-            const companyQueryResponse = document.getElementById('company-query-response');
-            const companyQueryContent = document.getElementById('company-query-content');
-            
-            // Generar respuesta específica para la empresa basada en la consulta
-            const response = generateCompanySpecificResponse(companyName, query);
-            
-            companyQueryContent.innerHTML = response;
-            companyQueryResponse.classList.add('visible');
-        }
-
-        function generateCompanySpecificResponse(companyName, query) {
-            const lowerQuery = query.toLowerCase();
-            
-            // Respuestas específicas contextualizadas con la empresa
-            if (lowerQuery.includes('cumplimiento') || lowerQuery.includes('normativa') || lowerQuery.includes('ambiental')) {
-                return `
-                    <p><strong>Análisis de Cumplimiento Ambiental - ${companyName}:</strong></p>
-                    <p>Basado en el análisis de los registros ambientales de <em>${companyName}</em>:</p>
-                    <p>• <strong>Estado actual:</strong> La empresa mantiene 3 RCA vigentes y ha cumplido con las obligaciones ambientales principales.</p>
-                    <p>• <strong>Historial de fiscalización:</strong> Se registran 3 infracciones menores en los últimos 2 años, todas regularizadas.</p>
-                    <p>• <strong>Proyectos en evaluación:</strong> 1 proyecto actualmente en proceso de evaluación ambiental.</p>
-                    <p>• <strong>Recomendaciones:</strong> Mantener el sistema de monitoreo continuo y reportes periódicos al SMA.</p>
-                    <p><em>La empresa demuestra un compromiso sólido con el cumplimiento de la normativa ambiental vigente.</em></p>
-                `;
-            } else if (lowerQuery.includes('riesgo') || lowerQuery.includes('contingencia') || lowerQuery.includes('emergencia')) {
-                return `
-                    <p><strong>Evaluación de Riesgos Ambientales - ${companyName}:</strong></p>
-                    <p>Análisis de riesgos específicos para <em>${companyName}</em>:</p>
-                    <p>• <strong>Riesgos identificados:</strong> Manejo de efluentes industriales y gestión de residuos peligrosos.</p>
-                    <p>• <strong>Medidas de control:</strong> Sistemas de tratamiento implementados según RCA vigentes.</p>
-                    <p>• <strong>Plan de contingencia:</strong> Protocolos establecidos para emergencias ambientales.</p>
-                    <p>• <strong>Monitoreo:</strong> Seguimiento continuo de parámetros críticos de emisión y descarga.</p>
-                    <p><em>La empresa cuenta con medidas preventivas adecuadas para la gestión de riesgos ambientales.</em></p>
-                `;
-            } else if (lowerQuery.includes('permiso') || lowerQuery.includes('autorización') || lowerQuery.includes('licencia')) {
-                return `
-                    <p><strong>Estado de Permisos y Autorizaciones - ${companyName}:</strong></p>
-                    <p>Revisión del estado regulatorio de <em>${companyName}</em>:</p>
-                    <p>• <strong>RCA vigentes:</strong> 3 resoluciones de calificación ambiental activas hasta 2026-2028.</p>
-                    <p>• <strong>Permisos sectoriales:</strong> Autorizaciones sanitarias y de residuos industriales al día.</p>
-                    <p>• <strong>Renovaciones pendientes:</strong> 1 RCA requiere renovación en 2026.</p>
-                    <p>• <strong>Nuevas solicitudes:</strong> 1 proyecto en evaluación para ampliación de operaciones.</p>
-                    <p><em>La empresa mantiene su documentación regulatoria en orden y vigente.</em></p>
-                `;
-            } else {
-                return `
-                    <p><strong>Consulta Específica - ${companyName}:</strong></p>
-                    <p>Análisis contextualizado para <em>${companyName}</em> sobre: "${query}"</p>
-                    <p>• <strong>Contexto empresarial:</strong> Empresa del sector ambiental con 4 proyectos evaluados en SEIA.</p>
-                    <p>• <strong>Marco regulatorio aplicable:</strong> Normativa ambiental sectorial y resoluciones específicas.</p>
-                    <p>• <strong>Antecedentes relevantes:</strong> Historial de cumplimiento con incidentes menores regularizados.</p>
-                    <p>• <strong>Recomendaciones específicas:</strong> Mantener seguimiento de obligaciones ambientales vigentes.</p>
-                    <p><em>Esta respuesta considera el perfil específico y antecedentes de ${companyName} en el sistema ambiental.</em></p>
-                `;
-            }
-        }
-
-        function loadReferences(query) {
-            const referencesSection = document.getElementById('references-section');
-            const referencesContent = document.getElementById('references-content');
-            
-            // Generar referencias basadas en el tipo de consulta
-            const references = generateReferences(query);
-            
-            referencesContent.innerHTML = references.map(ref => `
-                <div class="reference-item">
-                    <div class="reference-title">${ref.title}</div>
-                    <div class="reference-description">${ref.description}</div>
-                    <a href="${ref.url}" target="_blank" class="reference-link">Ir a la fuente</a>
-                </div>
-            `).join('');
-            
-            referencesSection.classList.add('visible');
-        }
-
-        function generateReferences(query) {
-            const lowerQuery = query.toLowerCase();
-            
-            if (lowerQuery.includes('cumplimiento') || lowerQuery.includes('normativa') || lowerQuery.includes('ambiental')) {
-                return [
-                    {
-                        title: "Sistema de Evaluación de Impacto Ambiental (SEIA)",
-                        description: "Base de datos oficial con información de proyectos y RCA vigentes de empresas del sector ambiental.",
-                        url: "https://seia.sea.gob.cl/"
-                    },
-                    {
-                        title: "Superintendencia del Medio Ambiente (SMA)",
-                        description: "Registro de fiscalizaciones, sanciones y cumplimiento de normativa ambiental por parte de empresas.",
-                        url: "https://www.sma.gob.cl/"
-                    },
-                    {
-                        title: "Ley 19.300 - Bases Generales del Medio Ambiente",
-                        description: "Marco legal principal que regula la evaluación de impacto ambiental y las obligaciones empresariales.",
-                        url: "https://www.bcn.cl/leychile/navegar?idNorma=30667"
-                    }
-                ];
-            } else if (lowerQuery.includes('riesgo') || lowerQuery.includes('contingencia')) {
-                return [
-                    {
-                        title: "Guías de Evaluación de Riesgo Ambiental - SEA",
-                        description: "Metodologías oficiales para la evaluación y gestión de riesgos ambientales en proyectos industriales.",
-                        url: "https://www.sea.gob.cl/contenido/guias-de-evaluacion-ambiental"
-                    },
-                    {
-                        title: "Planes de Prevención y Descontaminación",
-                        description: "Normativas específicas para la prevención de riesgos y planes de contingencia ambiental.",
-                        url: "https://mma.gob.cl/planes-de-prevencion-y-descontaminacion/"
-                    },
-                    {
-                        title: "Decreto Supremo N° 40/2012 - Reglamento SEIA",
-                        description: "Reglamento que establece los procedimientos para la evaluación de impacto ambiental y gestión de riesgos.",
-                        url: "https://www.bcn.cl/leychile/navegar?idNorma=1053563"
-                    }
-                ];
-            } else if (lowerQuery.includes('permiso') || lowerQuery.includes('autorización')) {
-                return [
-                    {
-                        title: "Ventanilla Única de Permisos Ambientales",
-                        description: "Sistema integrado para la tramitación de permisos y autorizaciones ambientales sectoriales.",
-                        url: "https://www.sea.gob.cl/ventanilla-unica"
-                    },
-                    {
-                        title: "Registro de Emisiones y Transferencias de Contaminantes",
-                        description: "Sistema oficial para el registro y seguimiento de emisiones industriales y permisos asociados.",
-                        url: "https://retc.mma.gob.cl/"
-                    },
-                    {
-                        title: "Servicio de Evaluación Ambiental - Permisos Sectoriales",
-                        description: "Información detallada sobre tipos de permisos ambientales y procedimientos de obtención.",
-                        url: "https://www.sea.gob.cl/contenido/permisos-ambientales-sectoriales"
-                    }
-                ];
-            } else {
-                return [
-                    {
-                        title: "Portal de Transparencia Ambiental",
-                        description: "Acceso público a información ambiental de empresas, proyectos y cumplimiento normativo.",
-                        url: "https://sinia.mma.gob.cl/"
-                    },
-                    {
-                        title: "Biblioteca del Congreso Nacional - Normativa Ambiental",
-                        description: "Compilación completa de leyes, decretos y reglamentos ambientales vigentes en Chile.",
-                        url: "https://www.bcn.cl/leychile/consulta/portada_tematica?tema=1454"
-                    },
-                    {
-                        title: "Ministerio del Medio Ambiente",
-                        description: "Información oficial sobre políticas, normativas y programas ambientales del gobierno.",
-                        url: "https://mma.gob.cl/"
-                    }
-                ];
-            }
-        }
-
-        function getStatusColor(status) {
-            const colors = {
-                'Aprobado': '#00ff88',
-                'En evaluación': '#ffed4a',
-                'Observado': '#ff4757',
-                'Pagada': '#00ff88',
-                'Apelada': '#ffed4a',
-                'Cerrada': '#b0b0b0'
-            };
-            return colors[status] || '#ffffff';
-        }
-
-        // Nuevas funciones para manejar datos del backend
-        function loadCompanyDataFromBackend(data, companyName, query) {
-            // Cargar datos de proyectos desde el backend
-            loadProjectsDataFromBackend(data.proyectos, query);
-            
-            // Cargar datos de sanciones desde el backend
-            loadSanctionsDataFromBackend(data.sanciones);
-            
-            // Cargar información de la empresa desde el backend
-            loadCompanyInfoFromBackend(data.infoEmpresarial);
-            
-            // Cargar datos de RCA y reseña desde el backend
-            loadRCADataFromBackend(data.rcaData, data.descripcionEmpresa);
-            
-            // Si hay una consulta específica, mostrar respuesta específica
-            if (query.trim() && data.respuestaConsulta) {
-                loadCompanyQueryResponseFromBackend(companyName, data.respuestaConsulta);
-            }
-            
-            // Cargar referencias desde el backend
-            if (data.referencias && data.referencias.length > 0) {
-                loadReferencesFromBackend(data.referencias);
-            }
-            
-            // Centrar el mapa en las coordenadas proporcionadas
-            if (map && data.coordenadas) {
-                map.setView([data.coordenadas.lat, data.coordenadas.lng], 10);
-                
-                // Agregar marcador principal
-                if (window.currentMarker) {
-                    map.removeLayer(window.currentMarker);
-                }
-                
-                const popupContent = `
-                    <div style="text-align: center; padding: 10px;">
-                        <strong style="color: #ff6b35;">${companyName}</strong><br>
-                        <em style="color: #ffb366;">Ubicación Principal</em><br>
-                        <small>Santiago, Chile</small>
-                    </div>
-                `;
-                
-                window.currentMarker = L.marker([data.coordenadas.lat, data.coordenadas.lng])
-                    .addTo(map)
-                    .bindPopup(popupContent)
-                    .openPopup();
-            }
-        }
-
-        function loadProjectsDataFromBackend(projects, query = '') {
-            const projectsList = document.getElementById('projects-list');
-            
-            let headerText = '';
-            if (query && query.trim()) {
-                headerText = `<div style="background: var(--light-gray); padding: 10px; border-radius: 5px; margin-bottom: 15px; font-size: 0.9rem; color: var(--accent-orange);">
-                    📋 Búsqueda específica realizada para: "${query}"
-                </div>`;
-            } else {
-                headerText = `<div style="background: var(--light-gray); padding: 10px; border-radius: 5px; margin-bottom: 15px; font-size: 0.9rem; color: var(--text-gray);">
-                    📋 Datos obtenidos del SEIA
-                </div>`;
-            }
-            
-            if (projects && projects.length > 0) {
-                projectsList.innerHTML = headerText + projects.map((project, index) => `
-                    <div class="project-item" onclick="selectProjectFromBackend(${index})" data-project-index="${index}">
-                        <strong>${project.nombre}</strong><br>
-                        <em>Tipo:</em> ${project.tipo}<br>
-                        <em>Estado:</em> <span style="color: ${getStatusColor(project.estado)}">${project.estado}</span><br>
-                        <em>Fecha:</em> ${project.fecha}<br>
-                        <em>Código:</em> ${project.codigo}<br>
-                        <em>Dirección:</em> ${project.direccion}<br>
-                        <a href="${project.linkSeia}" target="_blank" onclick="event.stopPropagation()" style="color: var(--primary-orange); text-decoration: none; font-size: 0.9rem; margin-top: 8px; display: inline-block;">
-                            📋 Ver expediente en SEIA →
-                        </a>
-                    </div>
-                `).join('');
-                
-                // Guardar los proyectos globalmente
-                window.currentProjectsFromBackend = projects;
-            } else {
-                projectsList.innerHTML = headerText + '<div class="project-item">No se encontraron proyectos registrados en el SEIA para esta empresa.</div>';
-            }
-        }
-
-        function loadSanctionsDataFromBackend(sanctions) {
-            const sanctionsList = document.getElementById('sanctions-list');
-            
-            if (sanctions && sanctions.length > 0) {
-                sanctionsList.innerHTML = sanctions.map(sancion => `
-                    <div class="sanction-item">
-                        <strong>${sancion.tipo}</strong><br>
-                        <em>Monto:</em> ${sancion.monto}<br>
-                        <em>Fecha:</em> ${sancion.fecha}<br>
-                        <em>Estado:</em> <span style="color: ${getStatusColor(sancion.estado)}">${sancion.estado}</span><br>
-                        <em>Resolución:</em> ${sancion.resolucion}
-                    </div>
-                `).join('');
-            } else {
-                sanctionsList.innerHTML = '<div class="sanction-item">No se encontraron infracciones registradas en el SNIFA para esta empresa.</div>';
-            }
-        }
-
-        function loadCompanyInfoFromBackend(infoEmpresarial) {
-            const companyInfo = document.getElementById('company-info');
-            
-            companyInfo.innerHTML = `
-                <div class="info-item">
-                    <span class="info-label">Razón Social:</span>
-                    <span class="info-value">${infoEmpresarial.razonSocial}</span>
-                </div>
-                <div class="info-item">
-                    <span class="info-label">Nombre Fantasía:</span>
-                    <span class="info-value">${infoEmpresarial.nombreFantasia}</span>
-                </div>
-                <div class="info-item">
-                    <span class="info-label">Rubro:</span>
-                    <span class="info-value">${infoEmpresarial.rubro}</span>
-                </div>
-                <div class="info-item">
-                    <span class="info-label">Página Web:</span>
-                    <span class="info-value"><a href="https://${infoEmpresarial.paginaWeb}" target="_blank">${infoEmpresarial.paginaWeb}</a></span>
-                </div>
-                <div class="info-item">
-                    <span class="info-label">Teléfono:</span>
-                    <span class="info-value">${infoEmpresarial.telefono}</span>
-                </div>
-                <div class="info-item">
-                    <span class="info-label">Email:</span>
-                    <span class="info-value"><a href="mailto:${infoEmpresarial.email}">${infoEmpresarial.email}</a></span>
-                </div>
-            `;
-        }
-
-        function loadRCADataFromBackend(rcaData, descripcionEmpresa) {
-            const rcaContent = document.getElementById('rca-content');
-            const summaryContent = document.getElementById('summary-content');
-            
-            // Renderizar información de RCA
-            const vigentesCount = rcaData.filter(rca => rca.vigente).length;
-            
-            rcaContent.innerHTML = `
-                <div class="rca-count">
-                    ${vigentesCount} RCA${vigentesCount !== 1 ? 's' : ''} vigente${vigentesCount !== 1 ? 's' : ''}
-                </div>
-                ${rcaData.filter(rca => rca.vigente).map(rca => `
-                    <div class="rca-item">
-                        <strong>${rca.nombre}</strong><br>
-                        <em>Vigencia:</em> ${rca.fechaVigencia} - ${rca.fechaVencimiento}<br>
-                        <em>Estado:</em> <span style="color: #00ff88">Vigente</span>
-                    </div>
-                `).join('')}
-            `;
-            
-            // Mostrar descripción de la empresa
-            summaryContent.innerHTML = `
-                <div class="summary-text">
-                    ${descripcionEmpresa}
-                </div>
-            `;
-        }
-
-        function loadCompanyQueryResponseFromBackend(companyName, respuestaConsulta) {
-            const companyQueryResponse = document.getElementById('company-query-response');
-            const companyQueryContent = document.getElementById('company-query-content');
-            
-            companyQueryContent.innerHTML = respuestaConsulta;
-            companyQueryResponse.classList.add('visible');
-        }
-
-        function loadReferencesFromBackend(referencias) {
-            const referencesSection = document.getElementById('references-section');
-            const referencesContent = document.getElementById('references-content');
-            
-            referencesContent.innerHTML = referencias.map(ref => `
-                <div class="reference-item">
-                    <div class="reference-title">${ref.title}</div>
-                    <div class="reference-description">${ref.description}</div>
-                    <a href="${ref.url}" target="_blank" class="reference-link">Ir a la fuente</a>
-                </div>
-            `).join('');
-            
-            referencesSection.classList.add('visible');
-        }
-
-        function selectProjectFromBackend(projectIndex) {
-            const project = window.currentProjectsFromBackend[projectIndex];
-            
-            if (map && project) {
-                // Cambiar vista del mapa a la ubicación del proyecto
-                map.setView([project.lat, project.lng], 16);
-                
-                // Remover marcador anterior
-                if (window.currentMarker) {
-                    map.removeLayer(window.currentMarker);
-                }
-                
-                // Crear popup para el proyecto
-                const popupContent = `
-                    <div style="text-align: center; padding: 10px;">
-                        <strong style="color: #ff6b35;">${project.nombre}</strong><br>
-                        <em style="color: #ffb366;">${project.tipo}</em><br>
-                        <small>${project.direccion}</small><br>
-                        <small>Estado: <span style="color: ${getStatusColor(project.estado)}">${project.estado}</span></small><br>
-                        <small>Código: ${project.codigo}</small>
-                    </div>
-                `;
-                
-                // Agregar nuevo marcador
-                window.currentMarker = L.marker([project.lat, project.lng])
-                    .addTo(map)
-                    .bindPopup(popupContent)
-                    .openPopup();
-                
-                // Actualizar estilos de selección
-                document.querySelectorAll('.project-item').forEach(item => {
-                    item.classList.remove('selected');
-                });
-                document.querySelector(`[data-project-index="${projectIndex}"]`).classList.add('selected');
-            }
-        }
-
-        // Inicialización de efectos
-        document.addEventListener('DOMContentLoaded', function() {
-            // Animar las barras de estado
-            setTimeout(() => {
-                document.querySelectorAll('.status-fill').forEach(bar => {
-                    bar.style.animation = 'fillBar 2s ease-out forwards';
-                });
-            }, 500);
-        });
     </script>
 </body>
 </html>
