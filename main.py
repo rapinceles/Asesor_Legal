@@ -3,6 +3,7 @@ from fastapi import FastAPI, Form, Request, HTTPException
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+from fastapi.middleware.cors import CORSMiddleware
 from typing import Optional
 import os
 from sqlalchemy.orm import Session
@@ -17,6 +18,15 @@ import json
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="MERLIN - Asesor Legal Ambiental Inteligente")
+
+# Configurar CORS
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # En producción, especifica dominios exactos
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # Configurar carpetas estáticas y plantillas HTML
 app.mount("/static", StaticFiles(directory="static"), name="static")
@@ -35,7 +45,73 @@ def get_db():
 async def render_form(request: Request):
     return templates.TemplateResponse("index.html", {"request": request})
 
-# Endpoint para análisis general
+# Endpoint unificado para todas las consultas
+@app.post("/consulta")
+async def consulta_unificada(request: Request):
+    """
+    Endpoint unificado que maneja todos los tipos de consulta
+    """
+    try:
+        # Obtener datos JSON del request
+        data = await request.json()
+        query = data.get("query", "").strip()
+        query_type = data.get("query_type", "general")
+        company_name = data.get("company_name", "").strip()
+        
+        if not query:
+            return JSONResponse({
+                "success": False,
+                "error": "La consulta no puede estar vacía"
+            }, status_code=400)
+        
+        # Procesar según el tipo de consulta
+        if query_type == "general":
+            # Análisis general
+            respuesta = realizar_analisis_completo(
+                empresa="",
+                analisis=query,
+                sector="legal",
+                documentos=[]
+            )
+            
+            referencias = generar_referencias_legales(query)
+            
+            return JSONResponse({
+                "success": True,
+                "respuesta": respuesta,
+                "referencias": referencias
+            })
+            
+        elif query_type in ["empresa", "proyecto"]:
+            # Análisis empresarial/proyecto
+            if not company_name:
+                return JSONResponse({
+                    "success": False,
+                    "error": "El nombre de la empresa es requerido"
+                }, status_code=400)
+            
+            # Aquí iría la lógica de análisis empresarial
+            # Por ahora devolvemos una respuesta simulada
+            respuesta = f"Análisis de {query_type} para {company_name}: {query}"
+            
+            return JSONResponse({
+                "success": True,
+                "respuesta": respuesta,
+                "empresa_info": {
+                    "nombre": company_name,
+                    "tipo": query_type,
+                    "estado": "Análisis completado"
+                },
+                "referencias": generar_referencias_ambientales(query)
+            })
+        
+    except Exception as e:
+        return JSONResponse({
+            "success": False,
+            "error": f"Error al procesar la consulta: {str(e)}"
+        }, status_code=500)
+
+# Endpoint para análisis general (mantener compatibilidad)
 @app.post("/analisis_general/")
 async def analisis_general(
     query: str = Form(..., alias="query_box")
