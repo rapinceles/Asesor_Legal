@@ -5,6 +5,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from typing import Optional
 import os
+import sys
 
 # Importar scraper con fallback ultra-seguro
 try:
@@ -22,20 +23,86 @@ except ImportError:
     SEIA_DISPONIBLE = False
     print("⚠️ Scraper SEIA no disponible, funcionando en modo básico")
 
-app = FastAPI(title="MERLIN - Asesor Legal Ambiental Inteligente")
+app = FastAPI(
+    title="MERLIN - Asesor Legal Ambiental Inteligente",
+    version="2.0",
+    description="Sistema de consultas legales ambientales con integración SEIA"
+)
 
 # Configurar carpetas estáticas y plantillas HTML
-app.mount("/static", StaticFiles(directory="static"), name="static")
-templates = Jinja2Templates(directory="templates")
+try:
+    app.mount("/static", StaticFiles(directory="static"), name="static")
+    templates = Jinja2Templates(directory="templates")
+    print("✅ Archivos estáticos y templates configurados")
+except Exception as e:
+    print(f"⚠️ Error configurando archivos estáticos: {e}")
+    # Crear templates básicos si no existen
+    templates = None
 
 # Variables de estado del sistema
-print("🚀 Iniciando MERLIN - Asesor Legal Ambiental")
-print("⚠️  Funcionando en modo simplificado (sin dependencias complejas)")
+print("🚀 Iniciando MERLIN - Asesor Legal Ambiental v2.0")
+print("⚠️ Funcionando en modo simplificado (sin dependencias complejas)")
+
+# Evento de startup
+@app.on_event("startup")
+async def startup_event():
+    """Inicialización del sistema al arrancar"""
+    try:
+        print("🔧 Ejecutando verificaciones de startup...")
+        
+        # Test básico de funciones principales
+        test_response = generar_respuesta_legal_general("test startup")
+        if test_response:
+            print("✅ Funciones principales verificadas")
+        else:
+            print("⚠️ Warning: Funciones principales no responden correctamente")
+            
+        # Test del scraper SEIA
+        if SEIA_DISPONIBLE:
+            try:
+                test_seia = obtener_informacion_proyecto_seia("test")
+                print("✅ Scraper SEIA verificado")
+            except Exception as e:
+                print(f"⚠️ Warning: Scraper SEIA con problemas: {e}")
+        
+        print("🎯 MERLIN iniciado correctamente")
+        
+    except Exception as e:
+        print(f"❌ Error en startup: {e}")
+        # No fallar el startup, solo logear
 
 # Ruta raíz que carga la interfaz visual
 @app.get("/", response_class=HTMLResponse)
 async def render_form(request: Request):
-    return templates.TemplateResponse("index.html", {"request": request})
+    """Renderizar la interfaz principal de MERLIN"""
+    try:
+        if templates is None:
+            # Fallback si no hay templates
+            return HTMLResponse("""
+            <html>
+                <head><title>MERLIN - Error</title></head>
+                <body>
+                    <h1>MERLIN - Asesor Legal Ambiental</h1>
+                    <p>Error: Templates no disponibles</p>
+                    <p>Usar endpoint /test para verificar funcionamiento</p>
+                </body>
+            </html>
+            """)
+        
+        return templates.TemplateResponse("index.html", {"request": request})
+    except Exception as e:
+        print(f"Error rendering template: {e}")
+        return HTMLResponse(f"""
+        <html>
+            <head><title>MERLIN - Error</title></head>
+            <body>
+                <h1>MERLIN - Asesor Legal Ambiental</h1>
+                <p>Error: {str(e)}</p>
+                <p><a href="/test">Probar endpoint /test</a></p>
+                <p><a href="/health">Ver estado del sistema</a></p>
+            </body>
+        </html>
+        """, status_code=500)
 
 # Endpoint unificado para todas las consultas
 @app.post("/consulta")
@@ -649,16 +716,67 @@ def generar_referencias_ambientales(query: str):
 # Endpoint de prueba para verificar conectividad
 @app.get("/test")
 async def test_endpoint():
-    return {"message": "MERLIN backend funcionando correctamente", "version": "1.0"}
+    """Endpoint de diagnóstico completo"""
+    try:
+        diagnostics = {
+            "status": "ok",
+            "message": "MERLIN backend funcionando correctamente", 
+            "version": "2.0",
+            "timestamp": "2025-01-19",
+            "system_info": {
+                "seia_available": SEIA_DISPONIBLE,
+                "templates_available": templates is not None,
+                "python_version": sys.version.split()[0] if 'sys' in globals() else "unknown"
+            }
+        }
+        
+        # Test de función principal
+        try:
+            test_response = generar_respuesta_legal_general("test")
+            diagnostics["function_test"] = "ok" if test_response else "failed"
+        except Exception as e:
+            diagnostics["function_test"] = f"error: {str(e)}"
+        
+        # Test de SEIA si está disponible
+        if SEIA_DISPONIBLE:
+            try:
+                seia_test = obtener_informacion_proyecto_seia("test")
+                diagnostics["seia_test"] = "ok" if seia_test else "failed"
+            except Exception as e:
+                diagnostics["seia_test"] = f"error: {str(e)}"
+        
+        return diagnostics
+        
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": f"Error en diagnóstico: {str(e)}",
+            "version": "2.0"
+        }
 
 @app.get("/health")
 async def health_check():
-    return {
-        "status": "ok", 
-        "message": "Servidor funcionando correctamente",
-        "mode": "simplificado",
-        "endpoints": ["/", "/consulta", "/test", "/health"]
-    }
+    """Health check endpoint para Render"""
+    try:
+        # Test básico de las funciones principales
+        test_response = generar_respuesta_legal_general("test")
+        if not test_response:
+            raise Exception("Función principal no responde")
+            
+        return {
+            "status": "healthy", 
+            "message": "MERLIN funcionando correctamente",
+            "version": "2.0",
+            "seia_available": SEIA_DISPONIBLE,
+            "endpoints": ["/", "/consulta", "/test", "/health"],
+            "timestamp": "2025-01-19"
+        }
+    except Exception as e:
+        return {
+            "status": "unhealthy",
+            "error": str(e),
+            "message": "Error en health check"
+        }
 
 # Endpoint adicional para análisis general (compatibilidad)
 @app.post("/analisis_general/")
