@@ -6,19 +6,21 @@ from fastapi.templating import Jinja2Templates
 from typing import Optional
 import os
 
-# Importar scraper con fallback
+# Importar scraper con fallback ultra-seguro
 try:
-    from scrapers.seia_project_detail_scraper import obtener_informacion_proyecto_seia
+    from scrapers.seia_safe import obtener_informacion_proyecto_seia_safe as obtener_informacion_proyecto_seia
     SEIA_DISPONIBLE = True
-    print("✅ Scraper SEIA completo disponible")
+    print("✅ Scraper SEIA ultra-seguro disponible")
 except ImportError:
-    try:
-        from scrapers.seia_simple import obtener_informacion_proyecto_seia_simple as obtener_informacion_proyecto_seia
-        SEIA_DISPONIBLE = True
-        print("✅ Scraper SEIA simplificado disponible")
-    except ImportError:
-        SEIA_DISPONIBLE = False
-        print("⚠️ Scraper SEIA no disponible, funcionando en modo básico")
+    # Fallback interno si no existe el archivo
+    def obtener_informacion_proyecto_seia(nombre_empresa: str):
+        return {
+            'success': False,
+            'error': 'SEIA no disponible en este momento',
+            'data': None
+        }
+    SEIA_DISPONIBLE = False
+    print("⚠️ Scraper SEIA no disponible, funcionando en modo básico")
 
 app = FastAPI(title="MERLIN - Asesor Legal Ambiental Inteligente")
 
@@ -49,24 +51,38 @@ async def consulta_unificada(request: Request):
         company_name = data.get("company_name", "").strip()
         project_location = data.get("project_location", "").strip()
         
+        # Validaciones básicas
         if not query:
             return JSONResponse({
                 "success": False,
                 "error": "La consulta no puede estar vacía"
             }, status_code=400)
         
+        if len(query) > 5000:
+            return JSONResponse({
+                "success": False,
+                "error": "La consulta es demasiado larga (máximo 5000 caracteres)"
+            }, status_code=400)
+        
         # Procesar según el tipo de consulta
         if query_type == "general":
-            # Análisis general
-            respuesta = generar_respuesta_legal_general(query)
-            referencias = generar_referencias_legales(query)
-            
-            return JSONResponse({
-                "success": True,
-                "respuesta": respuesta,
-                "referencias": referencias
-            })
-            
+            try:
+                # Análisis general
+                respuesta = generar_respuesta_legal_general(query)
+                referencias = generar_referencias_legales(query)
+                
+                return JSONResponse({
+                    "success": True,
+                    "respuesta": respuesta,
+                    "referencias": referencias
+                })
+            except Exception as e:
+                print(f"Error en consulta general: {e}")
+                return JSONResponse({
+                    "success": False,
+                    "error": "Error al procesar la consulta general. Por favor intente nuevamente."
+                }, status_code=500)
+                
         elif query_type in ["empresa", "proyecto"]:
             # Análisis empresarial/proyecto
             if not company_name:
@@ -81,62 +97,89 @@ async def consulta_unificada(request: Request):
                 try:
                     print(f"Consultando SEIA para empresa: {company_name}")
                     seia_result = obtener_informacion_proyecto_seia(company_name)
-                    if seia_result['success']:
-                        seia_info = seia_result['data']
+                    if seia_result and seia_result.get('success'):
+                        seia_info = seia_result.get('data')
                         print(f"Información del SEIA obtenida exitosamente")
                     else:
-                        print(f"No se pudo obtener información del SEIA: {seia_result.get('error', 'Error desconocido')}")
+                        print(f"No se pudo obtener información del SEIA: {seia_result.get('error', 'Error desconocido') if seia_result else 'Sin respuesta'}")
                 except Exception as e:
                     print(f"Error al consultar SEIA: {e}")
                     seia_info = None
             
-            respuesta = generar_respuesta_empresarial(company_name, query, query_type, project_location, seia_info)
-            
-            response_data = {
-                "success": True,
-                "respuesta": respuesta,
-                "referencias": generar_referencias_ambientales(query)
-            }
-            
-            # Agregar información de empresa desde SEIA si está disponible
-            if seia_info:
-                empresa_info = construir_info_empresa_seia(seia_info, company_name, query_type)
-                response_data["empresa_info"] = empresa_info
+            try:
+                respuesta = generar_respuesta_empresarial(company_name, query, query_type, project_location, seia_info)
                 
-                # Agregar información de ubicación desde SEIA
-                ubicacion_info = construir_info_ubicacion_seia(seia_info, project_location)
-                if ubicacion_info:
-                    response_data["ubicacion"] = ubicacion_info
-            else:
-                # Información básica si no se encuentra en SEIA
-                response_data["empresa_info"] = {
-                    "nombre": company_name,
-                    "tipo": query_type,
-                    "estado": "Información básica (no encontrada en SEIA)"
+                response_data = {
+                    "success": True,
+                    "respuesta": respuesta,
+                    "referencias": generar_referencias_ambientales(query)
                 }
                 
-                # Agregar información de ubicación manual si está disponible
-                if project_location:
-                    response_data["ubicacion"] = {
-                        "direccion": project_location,
-                        "tipo": "Ubicación Manual",
-                        "coordenadas": "Ver en mapa para detalles"
+                # Agregar información de empresa desde SEIA si está disponible
+                if seia_info:
+                    try:
+                        empresa_info = construir_info_empresa_seia(seia_info, company_name, query_type)
+                        response_data["empresa_info"] = empresa_info
+                        
+                        # Agregar información de ubicación desde SEIA
+                        ubicacion_info = construir_info_ubicacion_seia(seia_info, project_location)
+                        if ubicacion_info:
+                            response_data["ubicacion"] = ubicacion_info
+                    except Exception as e:
+                        print(f"Error al procesar información del SEIA: {e}")
+                        # Continuar sin información del SEIA
+                        pass
+                else:
+                    # Información básica si no se encuentra en SEIA
+                    response_data["empresa_info"] = {
+                        "nombre": company_name,
+                        "tipo": query_type,
+                        "estado": "Información básica (no encontrada en SEIA)"
                     }
-            
-            return JSONResponse(response_data)
+                    
+                    # Agregar información de ubicación manual si está disponible
+                    if project_location:
+                        response_data["ubicacion"] = {
+                            "direccion": project_location,
+                            "tipo": "Ubicación Manual",
+                            "coordenadas": "Ver en mapa para detalles"
+                        }
+                
+                return JSONResponse(response_data)
+                
+            except Exception as e:
+                print(f"Error en consulta empresarial: {e}")
+                return JSONResponse({
+                    "success": False,
+                    "error": "Error al procesar la consulta empresarial. Por favor intente nuevamente."
+                }, status_code=500)
         
-    except Exception as e:
+        else:
+            return JSONResponse({
+                "success": False,
+                "error": "Tipo de consulta no válido"
+            }, status_code=400)
+        
+    except ValueError as e:
+        print(f"Error de datos JSON: {e}")
         return JSONResponse({
             "success": False,
-            "error": f"Error al procesar la consulta: {str(e)}"
+            "error": "Formato de datos no válido"
+        }, status_code=400)
+    except Exception as e:
+        print(f"Error general en endpoint: {e}")
+        return JSONResponse({
+            "success": False,
+            "error": "Error interno del servidor. Por favor intente nuevamente."
         }, status_code=500)
 
 def generar_respuesta_legal_general(query: str) -> str:
     """Genera respuestas legales generales basadas en la consulta"""
-    query_lower = query.lower()
-    
-    if any(word in query_lower for word in ['agua', 'hidrico', 'recurso hidrico']):
-        return """**Marco Legal de Recursos Hídricos en Chile:**
+    try:
+        query_lower = query.lower()
+        
+        if any(word in query_lower for word in ['agua', 'hidrico', 'recurso hidrico']):
+            return """**Marco Legal de Recursos Hídricos en Chile:**
 
 • **Código de Aguas (DFL N° 1122/1981)**: Regula el derecho de aprovechamiento de aguas y su administración.
 
@@ -149,9 +192,9 @@ def generar_respuesta_legal_general(query: str) -> str:
 • **Sanciones**: Multas de 5 a 1000 UTM por uso no autorizado del agua.
 
 **Recomendación**: Siempre verificar la disponibilidad hídrica antes de solicitar derechos de aprovechamiento."""
-    
-    elif any(word in query_lower for word in ['ambiental', 'medio ambiente', 'impacto']):
-        return """**Marco Legal Ambiental en Chile:**
+        
+        elif any(word in query_lower for word in ['ambiental', 'medio ambiente', 'impacto']):
+            return """**Marco Legal Ambiental en Chile:**
 
 • **Ley 19.300 (Bases Generales del Medio Ambiente)**: Marco principal de la legislación ambiental.
 
@@ -164,9 +207,9 @@ def generar_respuesta_legal_general(query: str) -> str:
 • **Tipos de Evaluación**: EIA (Estudio) o DIA (Declaración) según el proyecto.
 
 **Importante**: El incumplimiento puede resultar en multas millonarias y cierre temporal."""
-    
-    elif any(word in query_lower for word in ['residuo', 'basura', 'desecho']):
-        return """**Gestión de Residuos en Chile:**
+        
+        elif any(word in query_lower for word in ['residuo', 'basura', 'desecho']):
+            return """**Gestión de Residuos en Chile:**
 
 • **Ley 20.920 (REP)**: Establece responsabilidad extendida del productor.
 
@@ -179,9 +222,9 @@ def generar_respuesta_legal_general(query: str) -> str:
 • **Disposición Final**: Debe realizarse en sitios autorizados por la autoridad sanitaria.
 
 **Sanciones**: Multas de hasta 10,000 UTM por manejo inadecuado de residuos peligrosos."""
-    
-    elif any(word in query_lower for word in ['aire', 'atmosfer', 'emision', 'contamina']):
-        return """**Calidad del Aire y Emisiones:**
+        
+        elif any(word in query_lower for word in ['aire', 'atmosfer', 'emision', 'contamina']):
+            return """**Calidad del Aire y Emisiones:**
 
 • **D.S. 59/1998**: Establece la norma de calidad primaria para PM10.
 
@@ -194,9 +237,9 @@ def generar_respuesta_legal_general(query: str) -> str:
 • **Compensación de Emisiones**: Requerida en zonas saturadas.
 
 **Sanciones**: Multas de hasta 10,000 UTM por incumplimiento de normas de emisión."""
-    
-    elif any(word in query_lower for word in ['ruido', 'sonoro', 'acustic']):
-        return """**Contaminación Acústica:**
+        
+        elif any(word in query_lower for word in ['ruido', 'sonoro', 'acustic']):
+            return """**Contaminación Acústica:**
 
 • **D.S. 38/2011**: Norma de emisión de ruidos generados por fuentes fijas.
 
@@ -209,9 +252,9 @@ def generar_respuesta_legal_general(query: str) -> str:
 • **Plan de Reducción**: Obligatorio si se superan límites permitidos.
 
 **Importante**: Las multas pueden llegar hasta 1,000 UTM por infracciones graves."""
-    
-    elif any(word in query_lower for word in ['suelo', 'contamina', 'tierra']):
-        return """**Protección del Suelo:**
+        
+        elif any(word in query_lower for word in ['suelo', 'contamina', 'tierra']):
+            return """**Protección del Suelo:**
 
 • **D.S. 4/2009**: Reglamento para el manejo de lodos generados en plantas de tratamiento.
 
@@ -224,9 +267,9 @@ def generar_respuesta_legal_general(query: str) -> str:
 • **Remedación**: Debe alcanzar niveles seguros según normativa.
 
 **Nota**: La responsabilidad de remediar puede ser del propietario actual o histórico."""
-    
-    else:
-        return f"""**Análisis Legal General:**
+        
+        else:
+            return f"""**Análisis Legal General:**
 
 Su consulta sobre "{query}" se enmarca en la legislación ambiental chilena vigente.
 
@@ -243,6 +286,21 @@ Su consulta sobre "{query}" se enmarca en la legislación ambiental chilena vige
 **Recomendación**: Solicite asesoría especializada para casos específicos.
 
 *Esta respuesta es de carácter informativo. Para decisiones importantes, consulte con un abogado especializado.*"""
+    
+    except Exception as e:
+        print(f"Error en generar_respuesta_legal_general: {e}")
+        return f"""**Error al procesar la consulta**:
+
+Ha ocurrido un error interno al procesar su consulta: {query}
+
+Por favor, intente reformular su pregunta o contacte al administrador del sistema.
+
+**Información de apoyo**:
+• Visite el sitio web oficial del SEA: www.sea.gob.cl
+• Consulte la biblioteca digital de la SMA: www.sma.gob.cl
+• Para consultas específicas, contacte un abogado ambiental especializado.
+
+*Disculpe las molestias ocasionadas.*"""
 
 def generar_respuesta_empresarial(empresa: str, query: str, tipo: str, ubicacion: str = None, seia_info: dict = None) -> str:
     """Genera respuestas específicas para empresas"""
@@ -366,166 +424,227 @@ def construir_info_empresa_seia(seia_info: dict, nombre_empresa: str, tipo: str)
     """
     Construye la información de empresa a partir de los datos del SEIA
     """
-    info_empresa = {
-        "nombre": nombre_empresa,
-        "tipo": tipo,
-        "estado": "Información obtenida del SEIA"
-    }
-    
-    # Extraer información del titular si está disponible
-    if 'titular' in seia_info and seia_info['titular']:
-        titular = seia_info['titular']
+    try:
+        info_empresa = {
+            "nombre": nombre_empresa,
+            "tipo": tipo,
+            "estado": "Información obtenida del SEIA"
+        }
         
-        if 'nombre_fantasia' in titular:
-            info_empresa['nombre_fantasia'] = titular['nombre_fantasia']
-        if 'razon_social' in titular:
-            info_empresa['razon_social'] = titular['razon_social']
-        if 'rut' in titular:
-            info_empresa['rut'] = titular['rut']
-        if 'direccion' in titular:
-            info_empresa['direccion'] = titular['direccion']
-        if 'telefono' in titular:
-            info_empresa['telefono'] = titular['telefono']
-        if 'email' in titular:
-            info_empresa['email'] = titular['email']
-    
-    # Agregar información adicional del proyecto
-    if 'codigo_expediente' in seia_info:
-        info_empresa['codigo_expediente'] = seia_info['codigo_expediente']
-    if 'estado' in seia_info:
-        info_empresa['estado_proyecto'] = seia_info['estado']
-    if 'region' in seia_info:
-        info_empresa['region'] = seia_info['region']
-    if 'link_expediente' in seia_info:
-        info_empresa['link_seia'] = seia_info['link_expediente']
-    
-    return info_empresa
+        # Verificar que seia_info es un diccionario válido
+        if not isinstance(seia_info, dict):
+            return info_empresa
+        
+        # Extraer información del titular si está disponible
+        if seia_info.get('titular') and isinstance(seia_info['titular'], dict):
+            titular = seia_info['titular']
+            
+            # Usar get() para evitar KeyError
+            if titular.get('nombre_fantasia'):
+                info_empresa['nombre_fantasia'] = str(titular['nombre_fantasia'])
+            if titular.get('razon_social'):
+                info_empresa['razon_social'] = str(titular['razon_social'])
+            if titular.get('rut'):
+                info_empresa['rut'] = str(titular['rut'])
+            if titular.get('direccion'):
+                info_empresa['direccion'] = str(titular['direccion'])
+            if titular.get('telefono'):
+                info_empresa['telefono'] = str(titular['telefono'])
+            if titular.get('email'):
+                info_empresa['email'] = str(titular['email'])
+        
+        # Agregar información adicional del proyecto
+        if seia_info.get('codigo_expediente'):
+            info_empresa['codigo_expediente'] = str(seia_info['codigo_expediente'])
+        if seia_info.get('estado'):
+            info_empresa['estado_proyecto'] = str(seia_info['estado'])
+        if seia_info.get('region'):
+            info_empresa['region'] = str(seia_info['region'])
+        if seia_info.get('link_expediente'):
+            info_empresa['link_seia'] = str(seia_info['link_expediente'])
+        
+        return info_empresa
+        
+    except Exception as e:
+        print(f"Error en construir_info_empresa_seia: {e}")
+        return {
+            "nombre": nombre_empresa,
+            "tipo": tipo,
+            "estado": "Error al procesar información del SEIA",
+            "error": str(e)
+        }
 
 def construir_info_ubicacion_seia(seia_info: dict, ubicacion_manual: str = None) -> dict:
     """
     Construye la información de ubicación a partir de los datos del SEIA
     """
-    ubicacion_info = {
-        "tipo": "Ubicación desde SEIA",
-        "fuente": "Sistema de Evaluación de Impacto Ambiental"
-    }
-    
-    # Priorizar ubicación del SEIA
-    if 'ubicacion' in seia_info and seia_info['ubicacion']:
-        ubicacion_seia = seia_info['ubicacion']
+    try:
+        ubicacion_info = {
+            "tipo": "Ubicación desde SEIA",
+            "fuente": "Sistema de Evaluación de Impacto Ambiental"
+        }
         
-        if 'ubicacion_proyecto' in ubicacion_seia:
-            ubicacion_info['direccion'] = ubicacion_seia['ubicacion_proyecto']
-        elif 'direccion_proyecto' in ubicacion_seia:
-            ubicacion_info['direccion'] = ubicacion_seia['direccion_proyecto']
+        # Verificar que seia_info es un diccionario válido
+        if not isinstance(seia_info, dict):
+            if ubicacion_manual:
+                return {
+                    "direccion": ubicacion_manual,
+                    "tipo": "Ubicación Manual",
+                    "fuente": "Ingresada por el usuario"
+                }
+            return None
         
-        if 'comuna' in ubicacion_seia:
-            ubicacion_info['comuna'] = ubicacion_seia['comuna']
-        if 'provincia' in ubicacion_seia:
-            ubicacion_info['provincia'] = ubicacion_seia['provincia']
-        if 'region' in ubicacion_seia:
-            ubicacion_info['region'] = ubicacion_seia['region']
-        if 'coordenadas' in ubicacion_seia:
-            ubicacion_info['coordenadas'] = ubicacion_seia['coordenadas']
-    
-    # Si no hay ubicación del SEIA pero hay dirección del titular
-    if 'direccion' not in ubicacion_info and 'titular' in seia_info:
-        titular = seia_info['titular']
-        if 'direccion' in titular:
-            ubicacion_info['direccion'] = titular['direccion']
-            ubicacion_info['tipo'] = "Dirección Casa Matriz (desde SEIA)"
-    
-    # Usar ubicación manual como respaldo
-    if 'direccion' not in ubicacion_info and ubicacion_manual:
-        ubicacion_info['direccion'] = ubicacion_manual
-        ubicacion_info['tipo'] = "Ubicación Manual"
-        ubicacion_info['fuente'] = "Ingresada por el usuario"
-    
-    # Solo retornar si hay al menos una dirección
-    if 'direccion' in ubicacion_info:
-        return ubicacion_info
-    
-    return None
+        # Priorizar ubicación del SEIA
+        if seia_info.get('ubicacion') and isinstance(seia_info['ubicacion'], dict):
+            ubicacion_seia = seia_info['ubicacion']
+            
+            if ubicacion_seia.get('ubicacion_proyecto'):
+                ubicacion_info['direccion'] = str(ubicacion_seia['ubicacion_proyecto'])
+            elif ubicacion_seia.get('direccion_proyecto'):
+                ubicacion_info['direccion'] = str(ubicacion_seia['direccion_proyecto'])
+            
+            if ubicacion_seia.get('comuna'):
+                ubicacion_info['comuna'] = str(ubicacion_seia['comuna'])
+            if ubicacion_seia.get('provincia'):
+                ubicacion_info['provincia'] = str(ubicacion_seia['provincia'])
+            if ubicacion_seia.get('region'):
+                ubicacion_info['region'] = str(ubicacion_seia['region'])
+            if ubicacion_seia.get('coordenadas'):
+                ubicacion_info['coordenadas'] = str(ubicacion_seia['coordenadas'])
+        
+        # Si no hay ubicación del SEIA pero hay dirección del titular
+        if 'direccion' not in ubicacion_info and seia_info.get('titular'):
+            titular = seia_info['titular']
+            if isinstance(titular, dict) and titular.get('direccion'):
+                ubicacion_info['direccion'] = str(titular['direccion'])
+                ubicacion_info['tipo'] = "Dirección Casa Matriz (desde SEIA)"
+        
+        # Usar ubicación manual como respaldo
+        if 'direccion' not in ubicacion_info and ubicacion_manual:
+            ubicacion_info['direccion'] = str(ubicacion_manual)
+            ubicacion_info['tipo'] = "Ubicación Manual"
+            ubicacion_info['fuente'] = "Ingresada por el usuario"
+        
+        # Solo retornar si hay al menos una dirección
+        if ubicacion_info.get('direccion'):
+            return ubicacion_info
+        
+        return None
+        
+    except Exception as e:
+        print(f"Error en construir_info_ubicacion_seia: {e}")
+        if ubicacion_manual:
+            return {
+                "direccion": str(ubicacion_manual),
+                "tipo": "Ubicación Manual",
+                "fuente": "Ingresada por el usuario (error en SEIA)",
+                "error": str(e)
+            }
+        return None
 
 def generar_referencias_legales(query: str):
     """Genera referencias legales basadas en la consulta"""
-    query_lower = query.lower()
+    try:
+        if not query or not isinstance(query, str):
+            return []
+            
+        query_lower = query.lower()
+        
+        if any(word in query_lower for word in ['agua', 'hidrico', 'recurso hidrico']):
+            return [
+                {
+                    "title": "Código de Aguas (DFL N° 1122/1981)",
+                    "description": "Marco legal principal que regula los derechos de aprovechamiento de aguas en Chile.",
+                    "url": "https://www.bcn.cl/leychile/navegar?idNorma=5605"
+                },
+                {
+                    "title": "Dirección General de Aguas (DGA)",
+                    "description": "Organismo encargado de administrar los recursos hídricos del país.",
+                    "url": "https://www.dga.cl/"
+                }
+            ]
+        
+        elif any(word in query_lower for word in ['ambiental', 'medio ambiente', 'impacto']):
+            return [
+                {
+                    "title": "Ley 19.300 - Bases Generales del Medio Ambiente",
+                    "description": "Marco legal principal de la legislación ambiental chilena.",
+                    "url": "https://www.bcn.cl/leychile/navegar?idNorma=30667"
+                },
+                {
+                    "title": "Sistema de Evaluación de Impacto Ambiental (SEIA)",
+                    "description": "Portal oficial para tramitación de proyectos ambientales.",
+                    "url": "https://seia.sea.gob.cl/"
+                }
+            ]
+        
+        elif any(word in query_lower for word in ['residuo', 'basura', 'desecho']):
+            return [
+                {
+                    "title": "Ley 20.920 - Responsabilidad Extendida del Productor",
+                    "description": "Marco legal para la gestión de residuos y reciclaje.",
+                    "url": "https://www.bcn.cl/leychile/navegar?idNorma=1090894"
+                },
+                {
+                    "title": "Ministerio del Medio Ambiente - Residuos",
+                    "description": "Información oficial sobre gestión de residuos.",
+                    "url": "https://mma.gob.cl/economia-circular/gestion-de-residuos/"
+                }
+            ]
+        
+        else:
+            return [
+                {
+                    "title": "Biblioteca del Congreso Nacional",
+                    "description": "Compilación completa de leyes chilenas vigentes.",
+                    "url": "https://www.bcn.cl/leychile/"
+                },
+                {
+                    "title": "Ministerio del Medio Ambiente",
+                    "description": "Información oficial sobre normativas ambientales.",
+                    "url": "https://mma.gob.cl/"
+                }
+            ]
     
-    if any(word in query_lower for word in ['agua', 'hidrico']):
-        return [
-            {
-                "title": "Código de Aguas (DFL N° 1122/1981)",
-                "description": "Marco legal principal que regula los derechos de aprovechamiento de aguas en Chile.",
-                "url": "https://www.bcn.cl/leychile/navegar?idNorma=5605"
-            },
-            {
-                "title": "Dirección General de Aguas (DGA)",
-                "description": "Organismo encargado de administrar los recursos hídricos del país.",
-                "url": "https://www.dga.cl/"
-            }
-        ]
-    
-    elif any(word in query_lower for word in ['ambiental', 'medio ambiente']):
-        return [
-            {
-                "title": "Ley 19.300 - Bases Generales del Medio Ambiente",
-                "description": "Marco legal principal de la legislación ambiental chilena.",
-                "url": "https://www.bcn.cl/leychile/navegar?idNorma=30667"
-            },
-            {
-                "title": "Sistema de Evaluación de Impacto Ambiental (SEIA)",
-                "description": "Portal oficial para tramitación de proyectos ambientales.",
-                "url": "https://seia.sea.gob.cl/"
-            }
-        ]
-    
-    elif any(word in query_lower for word in ['residuo', 'basura']):
-        return [
-            {
-                "title": "Ley 20.920 - Responsabilidad Extendida del Productor",
-                "description": "Marco legal para la gestión de residuos y reciclaje.",
-                "url": "https://www.bcn.cl/leychile/navegar?idNorma=1090894"
-            },
-            {
-                "title": "Ministerio del Medio Ambiente - Residuos",
-                "description": "Información oficial sobre gestión de residuos.",
-                "url": "https://mma.gob.cl/economia-circular/gestion-de-residuos/"
-            }
-        ]
-    
-    else:
+    except Exception as e:
+        print(f"Error en generar_referencias_legales: {e}")
         return [
             {
                 "title": "Biblioteca del Congreso Nacional",
                 "description": "Compilación completa de leyes chilenas vigentes.",
                 "url": "https://www.bcn.cl/leychile/"
+            }
+        ]
+
+def generar_referencias_ambientales(query: str):
+    """Genera referencias específicas para consultas ambientales"""
+    try:
+        return [
+            {
+                "title": "Superintendencia del Medio Ambiente (SMA)",
+                "description": "Organismo fiscalizador del cumplimiento de la normativa ambiental.",
+                "url": "https://www.sma.gob.cl/"
             },
+            {
+                "title": "Servicio de Evaluación Ambiental (SEA)",
+                "description": "Administra el Sistema de Evaluación de Impacto Ambiental.",
+                "url": "https://www.sea.gob.cl/"
+            },
+            {
+                "title": "Portal de Transparencia Ambiental",
+                "description": "Acceso público a información ambiental de empresas y proyectos.",
+                "url": "https://sinia.mma.gob.cl/"
+            }
+        ]
+    except Exception as e:
+        print(f"Error en generar_referencias_ambientales: {e}")
+        return [
             {
                 "title": "Ministerio del Medio Ambiente",
                 "description": "Información oficial sobre normativas ambientales.",
                 "url": "https://mma.gob.cl/"
             }
         ]
-
-def generar_referencias_ambientales(query: str):
-    """Genera referencias específicas para consultas ambientales"""
-    return [
-        {
-            "title": "Superintendencia del Medio Ambiente (SMA)",
-            "description": "Organismo fiscalizador del cumplimiento de la normativa ambiental.",
-            "url": "https://www.sma.gob.cl/"
-        },
-        {
-            "title": "Servicio de Evaluación Ambiental (SEA)",
-            "description": "Administra el Sistema de Evaluación de Impacto Ambiental.",
-            "url": "https://www.sea.gob.cl/"
-        },
-        {
-            "title": "Portal de Transparencia Ambiental",
-            "description": "Acceso público a información ambiental de empresas y proyectos.",
-            "url": "https://sinia.mma.gob.cl/"
-        }
-    ]
 
 # Endpoint de prueba para verificar conectividad
 @app.get("/test")
