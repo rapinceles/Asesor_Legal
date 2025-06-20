@@ -44,6 +44,7 @@ async def consulta_unificada(request: Request):
         query = data.get("query", "").strip()
         query_type = data.get("query_type", "general")
         company_name = data.get("company_name", "").strip()
+        project_location = data.get("project_location", "").strip()
         
         if not query:
             return JSONResponse({
@@ -71,9 +72,9 @@ async def consulta_unificada(request: Request):
                     "error": "El nombre de la empresa es requerido"
                 }, status_code=400)
             
-            respuesta = generar_respuesta_empresarial(company_name, query, query_type)
+            respuesta = generar_respuesta_empresarial(company_name, query, query_type, project_location)
             
-            return JSONResponse({
+            response_data = {
                 "success": True,
                 "respuesta": respuesta,
                 "empresa_info": {
@@ -82,7 +83,17 @@ async def consulta_unificada(request: Request):
                     "estado": "Análisis completado"
                 },
                 "referencias": generar_referencias_ambientales(query)
-            })
+            }
+            
+            # Agregar información de ubicación si está disponible
+            if project_location:
+                response_data["ubicacion"] = {
+                    "direccion": project_location,
+                    "tipo": "Ubicación del Proyecto",
+                    "coordenadas": "Ver en mapa para detalles"
+                }
+            
+            return JSONResponse(response_data)
         
     except Exception as e:
         return JSONResponse({
@@ -203,15 +214,26 @@ Su consulta sobre "{query}" se enmarca en la legislación ambiental chilena vige
 
 *Esta respuesta es de carácter informativo. Para decisiones importantes, consulte con un abogado especializado.*"""
 
-def generar_respuesta_empresarial(empresa: str, query: str, tipo: str) -> str:
+def generar_respuesta_empresarial(empresa: str, query: str, tipo: str, ubicacion: str = None) -> str:
     """Genera respuestas específicas para empresas"""
+    ubicacion_info = ""
+    if ubicacion and tipo == "proyecto":
+        ubicacion_info = f"""
+
+• **📍 Análisis de Ubicación**: {ubicacion}
+  - Verificar zonificación y ordenanzas municipales locales
+  - Evaluar cercanía a áreas protegidas o sensibles (SNASPE)
+  - Considerar normativas ambientales específicas de la región
+  - Revisar planes reguladores comunales vigentes
+  - Identificar posibles restricciones territoriales"""
+    
     return f"""**Análisis {tipo.title()} - {empresa}:**
 
 Consulta específica: "{query}"
 
 • **Tipo de Análisis**: {tipo.title()}
 • **Empresa**: {empresa}
-• **Marco Legal Aplicable**: Normativa ambiental sectorial
+• **Marco Legal Aplicable**: Normativa ambiental sectorial{ubicacion_info}
 
 **Recomendaciones Específicas:**
 • Verificar cumplimiento de obligaciones ambientales vigentes

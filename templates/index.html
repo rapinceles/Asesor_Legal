@@ -7,6 +7,9 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&family=Orbitron:wght@400;700;900&family=Dancing+Script:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Google Maps API Script -->
+    <script async defer src="https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY&libraries=places&callback=initMap"></script>
 
 
     <style>
@@ -312,6 +315,77 @@
             line-height: 1.6;
         }
 
+        /* Estilos para el mapa */
+        .map-section {
+            display: none;
+            margin-top: 40px;
+            padding-top: 40px;
+            border-top: 1px solid rgba(255, 107, 53, 0.3);
+        }
+
+        .map-section.visible {
+            display: block;
+        }
+
+        .location-input label {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: var(--text-white);
+            margin-bottom: 15px;
+            display: block;
+        }
+
+        .location-input input {
+            width: 100%;
+            padding: 18px 20px;
+            background: var(--primary-black);
+            border: 2px solid var(--light-gray);
+            border-radius: 12px;
+            color: var(--text-white);
+            font-size: 1.1rem;
+            transition: all 0.3s ease;
+            margin-bottom: 20px;
+        }
+
+        .location-input input:focus {
+            outline: none;
+            border-color: var(--primary-orange);
+            box-shadow: 0 0 0 3px rgba(255, 107, 53, 0.3);
+        }
+
+        .map-container {
+            width: 100%;
+            height: 400px;
+            border-radius: 15px;
+            overflow: hidden;
+            border: 2px solid var(--light-gray);
+            margin-top: 20px;
+        }
+
+        #map {
+            width: 100%;
+            height: 100%;
+        }
+
+        .map-button {
+            background: linear-gradient(45deg, var(--primary-orange), var(--secondary-orange));
+            border: none;
+            border-radius: 10px;
+            color: var(--text-white);
+            font-size: 1rem;
+            font-weight: 600;
+            padding: 12px 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 10px;
+        }
+
+        .map-button:hover {
+            background: linear-gradient(45deg, var(--secondary-orange), var(--accent-orange));
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(255, 107, 53, 0.3);
+        }
+
         @media (max-width: 768px) {
             .container {
                 padding: 20px 10px;
@@ -384,6 +458,24 @@
                     </div>
                 </div>
 
+                <div class="map-section" id="map-section">
+                    <div class="location-input">
+                        <label for="project-location">📍 Ubicación del proyecto</label>
+                        <input 
+                            type="text" 
+                            id="project-location" 
+                            name="project_location"
+                            placeholder="Ingresa la dirección o coordenadas del proyecto (ej: Santiago, Chile)"
+                        >
+                        <button type="button" class="map-button" onclick="buscarUbicacion()">
+                            🗺️ Mostrar en Mapa
+                        </button>
+                    </div>
+                    <div class="map-container">
+                        <div id="map"></div>
+                    </div>
+                </div>
+
                 <button type="submit" class="search-button" id="search-btn">
                     Consultar
                 </button>
@@ -422,9 +514,18 @@
                     if (this.value === 'empresa' || this.value === 'proyecto') {
                         companySection.classList.add('visible');
                         document.getElementById('company-name').required = true;
+                        
+                        // Mostrar sección del mapa solo para proyectos
+                        const mapSection = document.getElementById('map-section');
+                        if (this.value === 'proyecto') {
+                            mapSection.classList.add('visible');
+                        } else {
+                            mapSection.classList.remove('visible');
+                        }
                     } else {
                         companySection.classList.remove('visible');
                         document.getElementById('company-name').required = false;
+                        document.getElementById('map-section').classList.remove('visible');
                     }
                 });
             });
@@ -467,7 +568,8 @@
                     body: JSON.stringify({
                         query: query,
                         query_type: queryType,
-                        company_name: companyName || null
+                        company_name: companyName || null,
+                        project_location: document.getElementById('project-location').value.trim() || null
                     })
                 });
 
@@ -519,6 +621,20 @@
                 `;
             }
 
+            // Agregar información de ubicación si está disponible
+            if (data.ubicacion) {
+                html += `
+                    <div class="result-card">
+                        <div class="card-title">
+                            📍 Información de Ubicación
+                        </div>
+                        <div class="card-content">
+                            ${formatLocationInfo(data.ubicacion)}
+                        </div>
+                    </div>
+                `;
+            }
+
             // Agregar referencias si están disponibles
             if (data.referencias && data.referencias.length > 0) {
                 html += `
@@ -546,6 +662,34 @@
             for (const [key, value] of Object.entries(companyInfo)) {
                 html += `<p><strong>${key}:</strong> ${value}</p>`;
             }
+            return html;
+        }
+
+        function formatLocationInfo(locationInfo) {
+            let html = '';
+            for (const [key, value] of Object.entries(locationInfo)) {
+                if (key === 'direccion') {
+                    html += `<p><strong>Dirección:</strong> ${value}</p>`;
+                } else if (key === 'tipo') {
+                    html += `<p><strong>Tipo:</strong> ${value}</p>`;
+                } else if (key === 'coordenadas') {
+                    html += `<p><strong>Coordenadas:</strong> ${value}</p>`;
+                } else {
+                    html += `<p><strong>${key}:</strong> ${value}</p>`;
+                }
+            }
+            
+            // Agregar botón para centrar el mapa si existe ubicación
+            if (locationInfo.direccion && typeof buscarUbicacion === 'function') {
+                html += `
+                    <button onclick="centrarMapaEnUbicacion('${locationInfo.direccion}')" 
+                            class="map-button" 
+                            style="margin-top: 15px; font-size: 0.9rem; padding: 8px 15px;">
+                        🎯 Ver en Mapa
+                    </button>
+                `;
+            }
+            
             return html;
         }
 
@@ -585,6 +729,167 @@
                 resultsSection.classList.remove('visible');
             }
         }
+
+        // Variables globales para Google Maps
+        let map;
+        let geocoder;
+        let marker;
+
+        // Función para inicializar Google Maps
+        function initMap() {
+            // Coordenadas por defecto (Santiago, Chile)
+            const defaultLocation = { lat: -33.4489, lng: -70.6693 };
+            
+            // Crear el mapa
+            map = new google.maps.Map(document.getElementById('map'), {
+                zoom: 10,
+                center: defaultLocation,
+                styles: [
+                    {
+                        "elementType": "geometry",
+                        "stylers": [{"color": "#1d2c4d"}]
+                    },
+                    {
+                        "elementType": "labels.text.fill",
+                        "stylers": [{"color": "#8ec3b9"}]
+                    },
+                    {
+                        "elementType": "labels.text.stroke",
+                        "stylers": [{"color": "#1a3646"}]
+                    },
+                    {
+                        "featureType": "administrative.country",
+                        "elementType": "geometry.stroke",
+                        "stylers": [{"color": "#4b6878"}]
+                    },
+                    {
+                        "featureType": "water",
+                        "elementType": "geometry",
+                        "stylers": [{"color": "#0e1626"}]
+                    }
+                ]
+            });
+
+            // Inicializar geocoder
+            geocoder = new google.maps.Geocoder();
+
+            // Marcador inicial
+            marker = new google.maps.Marker({
+                position: defaultLocation,
+                map: map,
+                title: 'Ubicación del Proyecto',
+                icon: {
+                    url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
+                        <svg width="32" height="32" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+                            <circle cx="16" cy="16" r="12" fill="#ff6b35" stroke="#ffffff" stroke-width="2"/>
+                            <circle cx="16" cy="16" r="4" fill="#ffffff"/>
+                        </svg>
+                    `),
+                    scaledSize: new google.maps.Size(32, 32),
+                    anchor: new google.maps.Point(16, 16)
+                }
+            });
+        }
+
+        // Función para buscar ubicación
+        function buscarUbicacion() {
+            const locationInput = document.getElementById('project-location');
+            const address = locationInput.value.trim();
+            
+            if (!address) {
+                alert('Por favor ingresa una dirección o coordenadas');
+                return;
+            }
+
+            // Verificar si Google Maps está disponible
+            if (typeof google === 'undefined' || !geocoder) {
+                alert('Google Maps no está disponible. Por favor verifica tu conexión a internet.');
+                return;
+            }
+
+            // Buscar la dirección
+            geocoder.geocode({ address: address }, (results, status) => {
+                if (status === 'OK') {
+                    const location = results[0].geometry.location;
+                    
+                    // Centrar el mapa en la nueva ubicación
+                    map.setCenter(location);
+                    map.setZoom(15);
+                    
+                    // Mover el marcador
+                    marker.setPosition(location);
+                    
+                    // Mostrar información de la ubicación
+                    const infoWindow = new google.maps.InfoWindow({
+                        content: `
+                            <div style="color: #333; font-family: 'Poppins', sans-serif;">
+                                <h3 style="color: #ff6b35; margin: 0 0 10px 0;">📍 Ubicación del Proyecto</h3>
+                                <p style="margin: 0;"><strong>Dirección:</strong> ${results[0].formatted_address}</p>
+                                <p style="margin: 5px 0 0 0;"><strong>Coordenadas:</strong> ${location.lat().toFixed(6)}, ${location.lng().toFixed(6)}</p>
+                            </div>
+                        `
+                    });
+                    
+                    // Mostrar la ventana de información
+                    infoWindow.open(map, marker);
+                    
+                    // Actualizar el campo de texto con la dirección formateada
+                    locationInput.value = results[0].formatted_address;
+                    
+                } else {
+                    alert('No se pudo encontrar la ubicación: ' + status);
+                }
+            });
+        }
+
+        // Función alternativa para cuando Google Maps no esté disponible
+        function initMapFallback() {
+            console.log('Google Maps no disponible, usando mapa alternativo');
+            const mapContainer = document.getElementById('map');
+            mapContainer.innerHTML = `
+                <div style="
+                    width: 100%; 
+                    height: 100%; 
+                    background: linear-gradient(135deg, #1a1a1a, #2a2a2a); 
+                    display: flex; 
+                    align-items: center; 
+                    justify-content: center;
+                    flex-direction: column;
+                    color: #ff6b35;
+                    font-family: 'Poppins', sans-serif;
+                    text-align: center;
+                    padding: 20px;
+                    box-sizing: border-box;
+                ">
+                    <div style="font-size: 3rem; margin-bottom: 20px;">🗺️</div>
+                    <h3 style="margin: 0 0 10px 0; color: #ffffff;">Mapa no disponible</h3>
+                    <p style="margin: 0; color: #b0b0b0;">Para ver el mapa, necesitas una clave API de Google Maps válida</p>
+                    <p style="margin: 10px 0 0 0; color: #b0b0b0; font-size: 0.9rem;">Puedes seguir usando la funcionalidad de búsqueda de ubicaciones</p>
+                </div>
+            `;
+        }
+
+        // Función para centrar el mapa en una ubicación específica
+        function centrarMapaEnUbicacion(direccion) {
+            const locationInput = document.getElementById('project-location');
+            locationInput.value = direccion;
+            buscarUbicacion();
+            
+            // Hacer scroll al mapa
+            const mapSection = document.getElementById('map-section');
+            if (mapSection.classList.contains('visible')) {
+                mapSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        }
+
+        // Inicializar mapa alternativo si Google Maps no está disponible
+        window.addEventListener('load', function() {
+            setTimeout(() => {
+                if (typeof google === 'undefined') {
+                    initMapFallback();
+                }
+            }, 3000);
+        });
     </script>
 </body>
 </html>
