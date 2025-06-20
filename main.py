@@ -1,25 +1,26 @@
-# main_fixed.py - Versión corregida y completamente funcional
-from fastapi import FastAPI, Form, Request, HTTPException
+# main.py - MERLIN con integración SEIA
+from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from fastapi.middleware.cors import CORSMiddleware
 from typing import Optional
 import os
-import json
-import asyncio
-from scrapers.seia_project_detail_scraper import obtener_informacion_proyecto_seia
+
+# Importar scraper con fallback
+try:
+    from scrapers.seia_project_detail_scraper import obtener_informacion_proyecto_seia
+    SEIA_DISPONIBLE = True
+    print("✅ Scraper SEIA completo disponible")
+except ImportError:
+    try:
+        from scrapers.seia_simple import obtener_informacion_proyecto_seia_simple as obtener_informacion_proyecto_seia
+        SEIA_DISPONIBLE = True
+        print("✅ Scraper SEIA simplificado disponible")
+    except ImportError:
+        SEIA_DISPONIBLE = False
+        print("⚠️ Scraper SEIA no disponible, funcionando en modo básico")
 
 app = FastAPI(title="MERLIN - Asesor Legal Ambiental Inteligente")
-
-# Configurar CORS
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
 
 # Configurar carpetas estáticas y plantillas HTML
 app.mount("/static", StaticFiles(directory="static"), name="static")
@@ -74,16 +75,20 @@ async def consulta_unificada(request: Request):
                     "error": "El nombre de la empresa es requerido"
                 }, status_code=400)
             
-            # Obtener información real del SEIA si es un proyecto
+            # Obtener información real del SEIA si es un proyecto y está disponible
             seia_info = None
-            if query_type == "proyecto":
-                print(f"Consultando SEIA para empresa: {company_name}")
-                seia_result = obtener_informacion_proyecto_seia(company_name)
-                if seia_result['success']:
-                    seia_info = seia_result['data']
-                    print(f"Información del SEIA obtenida exitosamente")
-                else:
-                    print(f"No se pudo obtener información del SEIA: {seia_result.get('error', 'Error desconocido')}")
+            if query_type == "proyecto" and SEIA_DISPONIBLE:
+                try:
+                    print(f"Consultando SEIA para empresa: {company_name}")
+                    seia_result = obtener_informacion_proyecto_seia(company_name)
+                    if seia_result['success']:
+                        seia_info = seia_result['data']
+                        print(f"Información del SEIA obtenida exitosamente")
+                    else:
+                        print(f"No se pudo obtener información del SEIA: {seia_result.get('error', 'Error desconocido')}")
+                except Exception as e:
+                    print(f"Error al consultar SEIA: {e}")
+                    seia_info = None
             
             respuesta = generar_respuesta_empresarial(company_name, query, query_type, project_location, seia_info)
             

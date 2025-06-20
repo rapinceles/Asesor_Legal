@@ -1,0 +1,17 @@
+*.md
+*.txt
+!requirements.txt
+!runtime.txt
+.git/
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+.coverage
+venv/
+env/
+.env
+.venv
+node_modules/
+.DS_Store
+.gitignore 

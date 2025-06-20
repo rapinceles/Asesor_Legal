@@ -4,7 +4,7 @@ from bs4 import BeautifulSoup
 import re
 import time
 from typing import Dict, Optional, List
-from urllib.parse import urljoin, urlparse, parse_qs
+from urllib.parse import urljoin
 
 class SEIAProjectDetailScraper:
     """
