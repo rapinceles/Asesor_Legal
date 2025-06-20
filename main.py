@@ -543,9 +543,19 @@ async def health_check():
 
 # Endpoint adicional para análisis general (compatibilidad)
 @app.post("/analisis_general/")
-async def analisis_general(query: str = Form(..., alias="query_box")):
+async def analisis_general(request: Request):
     """Endpoint de compatibilidad para análisis general"""
     try:
+        # Obtener datos del request
+        form_data = await request.form()
+        query = form_data.get("query_box", "")
+        
+        if not query:
+            return JSONResponse({
+                "success": False,
+                "error": "La consulta no puede estar vacía"
+            }, status_code=400)
+        
         respuesta = generar_respuesta_legal_general(query)
         referencias = generar_referencias_legales(query)
         
