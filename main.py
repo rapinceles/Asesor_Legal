@@ -7,6 +7,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from typing import Optional
 import os
 import json
+import asyncio
+from scrapers.seia_project_detail_scraper import obtener_informacion_proyecto_seia
 
 app = FastAPI(title="MERLIN - Asesor Legal Ambiental Inteligente")
 
@@ -72,26 +74,49 @@ async def consulta_unificada(request: Request):
                     "error": "El nombre de la empresa es requerido"
                 }, status_code=400)
             
-            respuesta = generar_respuesta_empresarial(company_name, query, query_type, project_location)
+            # Obtener información real del SEIA si es un proyecto
+            seia_info = None
+            if query_type == "proyecto":
+                print(f"Consultando SEIA para empresa: {company_name}")
+                seia_result = obtener_informacion_proyecto_seia(company_name)
+                if seia_result['success']:
+                    seia_info = seia_result['data']
+                    print(f"Información del SEIA obtenida exitosamente")
+                else:
+                    print(f"No se pudo obtener información del SEIA: {seia_result.get('error', 'Error desconocido')}")
+            
+            respuesta = generar_respuesta_empresarial(company_name, query, query_type, project_location, seia_info)
             
             response_data = {
                 "success": True,
                 "respuesta": respuesta,
-                "empresa_info": {
-                    "nombre": company_name,
-                    "tipo": query_type,
-                    "estado": "Análisis completado"
-                },
                 "referencias": generar_referencias_ambientales(query)
             }
             
-            # Agregar información de ubicación si está disponible
-            if project_location:
-                response_data["ubicacion"] = {
-                    "direccion": project_location,
-                    "tipo": "Ubicación del Proyecto",
-                    "coordenadas": "Ver en mapa para detalles"
+            # Agregar información de empresa desde SEIA si está disponible
+            if seia_info:
+                empresa_info = construir_info_empresa_seia(seia_info, company_name, query_type)
+                response_data["empresa_info"] = empresa_info
+                
+                # Agregar información de ubicación desde SEIA
+                ubicacion_info = construir_info_ubicacion_seia(seia_info, project_location)
+                if ubicacion_info:
+                    response_data["ubicacion"] = ubicacion_info
+            else:
+                # Información básica si no se encuentra en SEIA
+                response_data["empresa_info"] = {
+                    "nombre": company_name,
+                    "tipo": query_type,
+                    "estado": "Información básica (no encontrada en SEIA)"
                 }
+                
+                # Agregar información de ubicación manual si está disponible
+                if project_location:
+                    response_data["ubicacion"] = {
+                        "direccion": project_location,
+                        "tipo": "Ubicación Manual",
+                        "coordenadas": "Ver en mapa para detalles"
+                    }
             
             return JSONResponse(response_data)
         
@@ -214,10 +239,53 @@ Su consulta sobre "{query}" se enmarca en la legislación ambiental chilena vige
 
 *Esta respuesta es de carácter informativo. Para decisiones importantes, consulte con un abogado especializado.*"""
 
-def generar_respuesta_empresarial(empresa: str, query: str, tipo: str, ubicacion: str = None) -> str:
+def generar_respuesta_empresarial(empresa: str, query: str, tipo: str, ubicacion: str = None, seia_info: dict = None) -> str:
     """Genera respuestas específicas para empresas"""
+    
+    # Información del SEIA si está disponible
+    seia_info_text = ""
+    if seia_info:
+        seia_info_text = f"""
+
+• **📊 Información del SEIA**:
+  - Código Expediente: {seia_info.get('codigo_expediente', 'No disponible')}
+  - Estado del Proyecto: {seia_info.get('estado', 'No disponible')}
+  - Región: {seia_info.get('region', 'No disponible')}
+  - Tipo de Proyecto: {seia_info.get('tipo', 'No disponible')}"""
+        
+        if 'titular' in seia_info and seia_info['titular']:
+            titular = seia_info['titular']
+            seia_info_text += f"""
+  - Titular: {titular.get('nombre', titular.get('razon_social', 'No disponible'))}"""
+            if 'rut' in titular:
+                seia_info_text += f"""
+  - RUT: {titular['rut']}"""
+    
+    # Información de ubicación
     ubicacion_info = ""
-    if ubicacion and tipo == "proyecto":
+    if seia_info and 'ubicacion' in seia_info and seia_info['ubicacion']:
+        ubicacion_seia = seia_info['ubicacion']
+        direccion = ubicacion_seia.get('ubicacion_proyecto') or ubicacion_seia.get('direccion_proyecto')
+        
+        if direccion:
+            ubicacion_info = f"""
+
+• **📍 Ubicación del Proyecto (SEIA)**: {direccion}"""
+            if 'comuna' in ubicacion_seia:
+                ubicacion_info += f"""
+  - Comuna: {ubicacion_seia['comuna']}"""
+            if 'region' in ubicacion_seia:
+                ubicacion_info += f"""
+  - Región: {ubicacion_seia['region']}"""
+            
+            ubicacion_info += f"""
+  - Verificar zonificación y ordenanzas municipales locales
+  - Evaluar cercanía a áreas protegidas o sensibles (SNASPE)
+  - Considerar normativas ambientales específicas de la región
+  - Revisar planes reguladores comunales vigentes
+  - Identificar posibles restricciones territoriales"""
+    
+    elif ubicacion and tipo == "proyecto":
         ubicacion_info = f"""
 
 • **📍 Análisis de Ubicación**: {ubicacion}
@@ -227,13 +295,46 @@ def generar_respuesta_empresarial(empresa: str, query: str, tipo: str, ubicacion
   - Revisar planes reguladores comunales vigentes
   - Identificar posibles restricciones territoriales"""
     
+    # Análisis específico basado en información del SEIA
+    analisis_seia = ""
+    if seia_info:
+        estado = seia_info.get('estado', '').lower()
+        if 'aprobado' in estado:
+            analisis_seia = f"""
+
+• **Estado del Proyecto**: APROBADO - RCA vigente
+  - Verificar cumplimiento de compromisos ambientales
+  - Revisar condiciones y medidas establecidas en la RCA
+  - Mantener reportes de seguimiento actualizados"""
+        elif 'calificado' in estado:
+            analisis_seia = f"""
+
+• **Estado del Proyecto**: CALIFICADO FAVORABLEMENTE
+  - RCA otorgada - proyecto puede ejecutarse
+  - Cumplir estrictamente con compromisos ambientales
+  - Implementar Plan de Seguimiento Ambiental"""
+        elif 'evaluación' in estado or 'admisible' in estado:
+            analisis_seia = f"""
+
+• **Estado del Proyecto**: EN EVALUACIÓN
+  - Proyecto en proceso de evaluación ambiental
+  - Seguir requerimientos de la autoridad ambiental
+  - Preparar respuestas a observaciones ciudadanas"""
+        elif 'rechazado' in estado or 'no calificado' in estado:
+            analisis_seia = f"""
+
+• **Estado del Proyecto**: NO CALIFICADO/RECHAZADO
+  - Proyecto no cuenta con aprobación ambiental
+  - Revisar causales de rechazo
+  - Evaluar posibilidad de nuevo ingreso con modificaciones"""
+    
     return f"""**Análisis {tipo.title()} - {empresa}:**
 
 Consulta específica: "{query}"
 
 • **Tipo de Análisis**: {tipo.title()}
 • **Empresa**: {empresa}
-• **Marco Legal Aplicable**: Normativa ambiental sectorial{ubicacion_info}
+• **Marco Legal Aplicable**: Normativa ambiental sectorial{seia_info_text}{ubicacion_info}{analisis_seia}
 
 **Recomendaciones Específicas:**
 • Verificar cumplimiento de obligaciones ambientales vigentes
@@ -254,7 +355,92 @@ Consulta específica: "{query}"
 • Reportes periódicos a autoridades
 • Manejo de residuos y emisiones
 
-*Para un análisis detallado, se requiere revisión de documentación específica de la empresa.*"""
+*Análisis basado en información oficial del SEIA. Para un análisis detallado, se requiere revisión de documentación específica de la empresa.*"""
+
+def construir_info_empresa_seia(seia_info: dict, nombre_empresa: str, tipo: str) -> dict:
+    """
+    Construye la información de empresa a partir de los datos del SEIA
+    """
+    info_empresa = {
+        "nombre": nombre_empresa,
+        "tipo": tipo,
+        "estado": "Información obtenida del SEIA"
+    }
+    
+    # Extraer información del titular si está disponible
+    if 'titular' in seia_info and seia_info['titular']:
+        titular = seia_info['titular']
+        
+        if 'nombre_fantasia' in titular:
+            info_empresa['nombre_fantasia'] = titular['nombre_fantasia']
+        if 'razon_social' in titular:
+            info_empresa['razon_social'] = titular['razon_social']
+        if 'rut' in titular:
+            info_empresa['rut'] = titular['rut']
+        if 'direccion' in titular:
+            info_empresa['direccion'] = titular['direccion']
+        if 'telefono' in titular:
+            info_empresa['telefono'] = titular['telefono']
+        if 'email' in titular:
+            info_empresa['email'] = titular['email']
+    
+    # Agregar información adicional del proyecto
+    if 'codigo_expediente' in seia_info:
+        info_empresa['codigo_expediente'] = seia_info['codigo_expediente']
+    if 'estado' in seia_info:
+        info_empresa['estado_proyecto'] = seia_info['estado']
+    if 'region' in seia_info:
+        info_empresa['region'] = seia_info['region']
+    if 'link_expediente' in seia_info:
+        info_empresa['link_seia'] = seia_info['link_expediente']
+    
+    return info_empresa
+
+def construir_info_ubicacion_seia(seia_info: dict, ubicacion_manual: str = None) -> dict:
+    """
+    Construye la información de ubicación a partir de los datos del SEIA
+    """
+    ubicacion_info = {
+        "tipo": "Ubicación desde SEIA",
+        "fuente": "Sistema de Evaluación de Impacto Ambiental"
+    }
+    
+    # Priorizar ubicación del SEIA
+    if 'ubicacion' in seia_info and seia_info['ubicacion']:
+        ubicacion_seia = seia_info['ubicacion']
+        
+        if 'ubicacion_proyecto' in ubicacion_seia:
+            ubicacion_info['direccion'] = ubicacion_seia['ubicacion_proyecto']
+        elif 'direccion_proyecto' in ubicacion_seia:
+            ubicacion_info['direccion'] = ubicacion_seia['direccion_proyecto']
+        
+        if 'comuna' in ubicacion_seia:
+            ubicacion_info['comuna'] = ubicacion_seia['comuna']
+        if 'provincia' in ubicacion_seia:
+            ubicacion_info['provincia'] = ubicacion_seia['provincia']
+        if 'region' in ubicacion_seia:
+            ubicacion_info['region'] = ubicacion_seia['region']
+        if 'coordenadas' in ubicacion_seia:
+            ubicacion_info['coordenadas'] = ubicacion_seia['coordenadas']
+    
+    # Si no hay ubicación del SEIA pero hay dirección del titular
+    if 'direccion' not in ubicacion_info and 'titular' in seia_info:
+        titular = seia_info['titular']
+        if 'direccion' in titular:
+            ubicacion_info['direccion'] = titular['direccion']
+            ubicacion_info['tipo'] = "Dirección Casa Matriz (desde SEIA)"
+    
+    # Usar ubicación manual como respaldo
+    if 'direccion' not in ubicacion_info and ubicacion_manual:
+        ubicacion_info['direccion'] = ubicacion_manual
+        ubicacion_info['tipo'] = "Ubicación Manual"
+        ubicacion_info['fuente'] = "Ingresada por el usuario"
+    
+    # Solo retornar si hay al menos una dirección
+    if 'direccion' in ubicacion_info:
+        return ubicacion_info
+    
+    return None
 
 def generar_referencias_legales(query: str):
     """Genera referencias legales basadas en la consulta"""

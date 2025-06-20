@@ -659,35 +659,112 @@
 
         function formatCompanyInfo(companyInfo) {
             let html = '';
+            
+            // Campos especiales con formato personalizado
+            const specialFields = {
+                'nombre': '🏢 Empresa',
+                'nombre_fantasia': '✨ Nombre de Fantasía',
+                'razon_social': '📋 Razón Social',
+                'rut': '🆔 RUT',
+                'direccion': '📍 Dirección',
+                'telefono': '📞 Teléfono',
+                'email': '📧 Email',
+                'region': '🌎 Región',
+                'codigo_expediente': '📑 Código Expediente SEIA',
+                'estado_proyecto': '📊 Estado del Proyecto',
+                'link_seia': '🔗 Link SEIA'
+            };
+            
+            // Mostrar campos en orden de prioridad
+            const fieldOrder = ['nombre', 'nombre_fantasia', 'razon_social', 'rut', 'direccion', 
+                              'telefono', 'email', 'region', 'codigo_expediente', 'estado_proyecto'];
+            
+            // Mostrar campos ordenados
+            fieldOrder.forEach(field => {
+                if (companyInfo[field]) {
+                    const label = specialFields[field] || field;
+                    const value = companyInfo[field];
+                    
+                    if (field === 'link_seia') {
+                        html += `<p><strong>${label}:</strong> <a href="${value}" target="_blank" style="color: var(--primary-orange);">Ver en SEIA →</a></p>`;
+                    } else if (field === 'email') {
+                        html += `<p><strong>${label}:</strong> <a href="mailto:${value}" style="color: var(--primary-orange);">${value}</a></p>`;
+                    } else if (field === 'telefono') {
+                        html += `<p><strong>${label}:</strong> <a href="tel:${value}" style="color: var(--primary-orange);">${value}</a></p>`;
+                    } else {
+                        html += `<p><strong>${label}:</strong> ${value}</p>`;
+                    }
+                }
+            });
+            
+            // Mostrar campos restantes que no están en el orden
             for (const [key, value] of Object.entries(companyInfo)) {
-                html += `<p><strong>${key}:</strong> ${value}</p>`;
+                if (!fieldOrder.includes(key) && key !== 'link_seia') {
+                    const label = specialFields[key] || key.charAt(0).toUpperCase() + key.slice(1);
+                    html += `<p><strong>${label}:</strong> ${value}</p>`;
+                }
             }
+            
             return html;
         }
 
         function formatLocationInfo(locationInfo) {
             let html = '';
+            
+            // Campos especiales para ubicación
+            const locationFields = {
+                'direccion': '📍 Dirección',
+                'tipo': '🏷️ Tipo de Ubicación',
+                'fuente': '📋 Fuente',
+                'comuna': '🏘️ Comuna',
+                'provincia': '🌆 Provincia',
+                'region': '🌎 Región',
+                'coordenadas': '📐 Coordenadas'
+            };
+            
+            // Orden de campos para mostrar
+            const fieldOrder = ['direccion', 'comuna', 'provincia', 'region', 'coordenadas', 'tipo', 'fuente'];
+            
+            // Mostrar campos ordenados
+            fieldOrder.forEach(field => {
+                if (locationInfo[field]) {
+                    const label = locationFields[field] || field;
+                    const value = locationInfo[field];
+                    html += `<p><strong>${label}:</strong> ${value}</p>`;
+                }
+            });
+            
+            // Mostrar campos restantes
             for (const [key, value] of Object.entries(locationInfo)) {
-                if (key === 'direccion') {
-                    html += `<p><strong>Dirección:</strong> ${value}</p>`;
-                } else if (key === 'tipo') {
-                    html += `<p><strong>Tipo:</strong> ${value}</p>`;
-                } else if (key === 'coordenadas') {
-                    html += `<p><strong>Coordenadas:</strong> ${value}</p>`;
-                } else {
-                    html += `<p><strong>${key}:</strong> ${value}</p>`;
+                if (!fieldOrder.includes(key)) {
+                    const label = locationFields[key] || key.charAt(0).toUpperCase() + key.slice(1);
+                    html += `<p><strong>${label}:</strong> ${value}</p>`;
                 }
             }
             
-            // Agregar botón para centrar el mapa si existe ubicación
+            // Agregar botón para centrar el mapa si existe dirección
             if (locationInfo.direccion && typeof buscarUbicacion === 'function') {
+                // Escapar comillas en la dirección para evitar errores de JavaScript
+                const direccionEscapada = locationInfo.direccion.replace(/'/g, "\\'").replace(/"/g, '\\"');
+                
                 html += `
-                    <button onclick="centrarMapaEnUbicacion('${locationInfo.direccion}')" 
+                    <button onclick="centrarMapaEnUbicacion('${direccionEscapada}')" 
                             class="map-button" 
                             style="margin-top: 15px; font-size: 0.9rem; padding: 8px 15px;">
                         🎯 Ver en Mapa
                     </button>
                 `;
+                
+                // Si hay información específica del SEIA, agregar botón adicional
+                if (locationInfo.fuente && locationInfo.fuente.includes('SEIA')) {
+                    html += `
+                        <button onclick="mostrarDetallesUbicacionSEIA('${direccionEscapada}')" 
+                                class="map-button" 
+                                style="margin-top: 10px; margin-left: 10px; font-size: 0.9rem; padding: 8px 15px; background: linear-gradient(45deg, #2196F3, #03A9F4);">
+                            🏢 Información SEIA
+                        </button>
+                    `;
+                }
             }
             
             return html;
@@ -880,6 +957,17 @@
             if (mapSection.classList.contains('visible')) {
                 mapSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
             }
+        }
+
+        // Función para mostrar detalles adicionales de ubicación SEIA
+        function mostrarDetallesUbicacionSEIA(direccion) {
+            // Centrar en el mapa primero
+            centrarMapaEnUbicacion(direccion);
+            
+            // Mostrar información adicional
+            setTimeout(() => {
+                alert(`📍 Ubicación obtenida del SEIA:\n\n${direccion}\n\n✅ Esta es la dirección oficial registrada en el Sistema de Evaluación de Impacto Ambiental.\n\n💡 Esta ubicación corresponde a los datos oficiales del proyecto evaluado ambientalmente.`);
+            }, 1000);
         }
 
         // Inicializar mapa alternativo si Google Maps no está disponible
