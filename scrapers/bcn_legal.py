@@ -233,31 +233,154 @@ class BCNScraper:
                 {'titulo': 'Ley 20.551/2011 - Regula el Cierre de Faenas e Instalaciones Mineras', 'numero': '20.551', 'tipo': 'Ley'},
                 {'titulo': 'Decreto Supremo 298/1994 - Reglamento de Transporte de Cargas Peligrosas por Calles y Caminos', 'numero': '298', 'tipo': 'Decreto'},
                 {'titulo': 'Ley 19.300/1994 - Ley sobre Bases Generales del Medio Ambiente', 'numero': '19.300', 'tipo': 'Ley'}
+            ],
+            'forestal': [
+                {'titulo': 'Ley 20.283/2008 - Sobre Recuperación del Bosque Nativo y Fomento Forestal', 'numero': '20.283', 'tipo': 'Ley'},
+                {'titulo': 'Decreto Ley 701/1974 - Sobre Fomento Forestal', 'numero': '701', 'tipo': 'Decreto Ley'},
+                {'titulo': 'Decreto Supremo 193/1998 - Reglamento General de la Ley sobre Recuperación del Bosque Nativo y Fomento Forestal', 'numero': '193', 'tipo': 'Decreto'},
+                {'titulo': 'Ley 18.378/1984 - Establece el Instituto Forestal', 'numero': '18.378', 'tipo': 'Ley'},
+                {'titulo': 'Decreto Supremo 259/1980 - Reglamento sobre Explotación de Bosques en Predios Particulares', 'numero': '259', 'tipo': 'Decreto'},
+                {'titulo': 'Ley 19.561/1998 - Modifica la Legislación que Indica sobre Fomento Forestal', 'numero': '19.561', 'tipo': 'Ley'},
+                {'titulo': 'Decreto Supremo 82/2010 - Reglamento de Suelos, Aguas y Humedales', 'numero': '82', 'tipo': 'Decreto'},
+                {'titulo': 'Ley 20.930/2016 - Establece la Política Forestal 2015-2035', 'numero': '20.930', 'tipo': 'Ley'},
+                {'titulo': 'Decreto Supremo 4363/1931 - Ley de Bosques', 'numero': '4363', 'tipo': 'Decreto'},
+                {'titulo': 'Ley 19.300/1994 - Ley sobre Bases Generales del Medio Ambiente', 'numero': '19.300', 'tipo': 'Ley'}
+            ],
+            'pesca': [
+                {'titulo': 'Ley 18.892/1989 - Ley General de Pesca y Acuicultura', 'numero': '18.892', 'tipo': 'Ley'},
+                {'titulo': 'Decreto Supremo 430/1991 - Reglamento de la Ley General de Pesca y Acuicultura', 'numero': '430', 'tipo': 'Decreto'},
+                {'titulo': 'Ley 20.657/2013 - Modifica la Ley General de Pesca y Acuicultura en Materias de Sustentabilidad', 'numero': '20.657', 'tipo': 'Ley'},
+                {'titulo': 'Decreto Supremo 320/2001 - Reglamento de Medidas de Administración Pesquera', 'numero': '320', 'tipo': 'Decreto'},
+                {'titulo': 'Ley 21.027/2017 - Modifica la Ley General de Pesca y Acuicultura para Eliminar la Pesca de Arrastre', 'numero': '21.027', 'tipo': 'Ley'},
+                {'titulo': 'Decreto Supremo 598/1995 - Reglamento Ambiental para la Acuicultura', 'numero': '598', 'tipo': 'Decreto'},
+                {'titulo': 'Ley 20.434/2010 - Modifica la Ley General de Pesca y Acuicultura', 'numero': '20.434', 'tipo': 'Ley'},
+                {'titulo': 'Decreto Supremo 319/2001 - Reglamento de Organizaciones de Productores Pesqueros Artesanales', 'numero': '319', 'tipo': 'Decreto'},
+                {'titulo': 'Ley 19.713/2001 - Deroga Ley que Establecía Límite a la Captura de la Sardina Española', 'numero': '19.713', 'tipo': 'Ley'},
+                {'titulo': 'Decreto Supremo 747/1992 - Reglamento de Caletas de Pescadores Artesanales', 'numero': '747', 'tipo': 'Decreto'}
+            ],
+            'energia': [
+                {'titulo': 'Ley 20.257/2008 - Introduce Modificaciones a la Ley General de Servicios Eléctricos Respecto de la Generación de Energía Eléctrica con Fuentes de Energías Renovables No Convencionales', 'numero': '20.257', 'tipo': 'Ley'},
+                {'titulo': 'DFL 4/2006 - Ley General de Servicios Eléctricos', 'numero': '4', 'tipo': 'DFL'},
+                {'titulo': 'Ley 20.698/2013 - Propicia la Ampliación de la Matriz Energética, Mediante Fuentes Renovables No Convencionales', 'numero': '20.698', 'tipo': 'Ley'},
+                {'titulo': 'Decreto Supremo 244/2006 - Reglamento para Medios de Generación No Convencionales y Pequeños Medios de Generación', 'numero': '244', 'tipo': 'Decreto'},
+                {'titulo': 'Ley 21.505/2023 - Establece el Marco Regulatorio para la Generación Distribuida', 'numero': '21.505', 'tipo': 'Ley'},
+                {'titulo': 'Decreto Supremo 88/2020 - Reglamento de la Ley de Generación Distribuida', 'numero': '88', 'tipo': 'Decreto'},
+                {'titulo': 'Ley 20.936/2016 - Establece un Nuevo Sistema de Transmisión Eléctrica y Crea un Organismo Coordinador Independiente del Sistema Eléctrico Nacional', 'numero': '20.936', 'tipo': 'Ley'},
+                {'titulo': 'Decreto Supremo 327/1997 - Reglamento de la Ley General de Servicios Eléctricos', 'numero': '327', 'tipo': 'Decreto'},
+                {'titulo': 'Ley 19.940/2004 - Regula Sistemas de Transporte de Energía Eléctrica', 'numero': '19.940', 'tipo': 'Ley'},
+                {'titulo': 'Decreto Supremo 131/2014 - Reglamento que Establece las Disposiciones Aplicables a las Instalaciones de Cogeneración Eficiente', 'numero': '131', 'tipo': 'Decreto'}
+            ],
+            'construccion': [
+                {'titulo': 'DFL 458/1975 - Ley General de Urbanismo y Construcciones', 'numero': '458', 'tipo': 'DFL'},
+                {'titulo': 'Decreto Supremo 47/1992 - Ordenanza General de Urbanismo y Construcciones', 'numero': '47', 'tipo': 'Decreto'},
+                {'titulo': 'Ley 20.703/2013 - Regula la Actividad de los Constructores de Viviendas', 'numero': '20.703', 'tipo': 'Ley'},
+                {'titulo': 'Decreto Supremo 174/2005 - Reglamento sobre Condiciones Sanitarias Mínimas de los Lugares de Trabajo en Faenas de Construcción', 'numero': '174', 'tipo': 'Decreto'},
+                {'titulo': 'Ley 19.537/1997 - Sobre Copropiedad Inmobiliaria', 'numero': '19.537', 'tipo': 'Ley'},
+                {'titulo': 'Decreto Supremo 50/2018 - Modifica Ordenanza General de Urbanismo y Construcciones en Materia de Accesibilidad', 'numero': '50', 'tipo': 'Decreto'},
+                {'titulo': 'Ley 20.016/2005 - Establece Nuevo Procedimiento de Evaluación de los Planes Reguladores', 'numero': '20.016', 'tipo': 'Ley'},
+                {'titulo': 'Decreto Supremo 236/2012 - Reglamento sobre Seguridad y Salud en el Trabajo en Obras de Construcción', 'numero': '236', 'tipo': 'Decreto'},
+                {'titulo': 'Ley 18.695/1988 - Orgánica Constitucional de Municipalidades', 'numero': '18.695', 'tipo': 'Ley'},
+                {'titulo': 'Decreto Supremo 594/1999 - Reglamento sobre Condiciones Sanitarias y Ambientales Básicas en los Lugares de Trabajo', 'numero': '594', 'tipo': 'Decreto'}
+            ],
+            'transporte': [
+                {'titulo': 'DFL 1/2007 - Ley de Tránsito', 'numero': '1', 'tipo': 'DFL'},
+                {'titulo': 'Decreto Supremo 298/1994 - Reglamento de Transporte de Cargas Peligrosas por Calles y Caminos', 'numero': '298', 'tipo': 'Decreto'},
+                {'titulo': 'Ley 18.290/1984 - Ley de Tránsito', 'numero': '18.290', 'tipo': 'Ley'},
+                {'titulo': 'Decreto Supremo 212/1992 - Reglamento del Registro de Vehículos Motorizados', 'numero': '212', 'tipo': 'Decreto'},
+                {'titulo': 'Ley 20.378/2009 - Establece el Sistema de Transporte Público Remunerado de Pasajeros', 'numero': '20.378', 'tipo': 'Ley'},
+                {'titulo': 'Decreto Supremo 158/1980 - Reglamento de los Servicios Nacionales de Transporte Público de Pasajeros', 'numero': '158', 'tipo': 'Decreto'},
+                {'titulo': 'Ley 19.821/2002 - Establece Normas sobre Transporte de Pasajeros', 'numero': '19.821', 'tipo': 'Ley'},
+                {'titulo': 'Decreto Supremo 170/2005 - Reglamento para el Otorgamiento de Licencias de Conducir', 'numero': '170', 'tipo': 'Decreto'},
+                {'titulo': 'Ley 20.068/2005 - Establece Medidas de Protección a la Maternidad para las Trabajadoras que Indica', 'numero': '20.068', 'tipo': 'Ley'},
+                {'titulo': 'Decreto Supremo 75/1987 - Reglamento para el Transporte de Sustancias Peligrosas por Calles y Caminos', 'numero': '75', 'tipo': 'Decreto'}
+            ],
+            'laboral': [
+                {'titulo': 'DFL 1/2003 - Código del Trabajo', 'numero': '1', 'tipo': 'DFL'},
+                {'titulo': 'Ley 16.744/1968 - Establece Normas sobre Accidentes del Trabajo y Enfermedades Profesionales', 'numero': '16.744', 'tipo': 'Ley'},
+                {'titulo': 'Decreto Supremo 594/1999 - Reglamento sobre Condiciones Sanitarias y Ambientales Básicas en los Lugares de Trabajo', 'numero': '594', 'tipo': 'Decreto'},
+                {'titulo': 'Ley 20.123/2006 - Regula Trabajo en Régimen de Subcontratación', 'numero': '20.123', 'tipo': 'Ley'},
+                {'titulo': 'Ley 19.759/2001 - Modifica el Código del Trabajo en lo Relativo a las Nuevas Modalidades de Contratación', 'numero': '19.759', 'tipo': 'Ley'},
+                {'titulo': 'Decreto Supremo 76/2007 - Reglamento para la Aplicación del Artículo 66 bis del Código del Trabajo', 'numero': '76', 'tipo': 'Decreto'},
+                {'titulo': 'Ley 20.348/2009 - Resguarda el Derecho a la Igualdad en las Remuneraciones', 'numero': '20.348', 'tipo': 'Ley'},
+                {'titulo': 'Decreto Supremo 40/1969 - Reglamento sobre Prevención de Riesgos Profesionales', 'numero': '40', 'tipo': 'Decreto'},
+                {'titulo': 'Ley 21.220/2020 - Modifica el Código del Trabajo en Materia de Trabajo a Distancia', 'numero': '21.220', 'tipo': 'Ley'},
+                {'titulo': 'Decreto Supremo 67/1999 - Reglamento para la Aplicación de la Ley N° 16.744', 'numero': '67', 'tipo': 'Decreto'}
             ]
         }
         
         resultados = []
         
-        # Buscar normativas relacionadas
+        # Buscar normativas relacionadas con coincidencias flexibles
+        terminos_busqueda = termino_lower.split()
+        
         for categoria, normativas in normativas_comunes.items():
-            if any(palabra in termino_lower for palabra in categoria.split()):
+            # Buscar coincidencias más flexibles
+            coincidencias = 0
+            palabras_categoria = categoria.split()
+            
+            # Verificar coincidencias palabra por palabra
+            for palabra_termino in terminos_busqueda:
+                for palabra_categoria in palabras_categoria:
+                    if (palabra_termino in palabra_categoria or 
+                        palabra_categoria in palabra_termino or
+                        palabra_termino == palabra_categoria):
+                        coincidencias += 1
+            
+            # También buscar en títulos de normativas
+            for normativa in normativas:
+                titulo_lower = normativa['titulo'].lower()
+                for palabra_termino in terminos_busqueda:
+                    if palabra_termino in titulo_lower:
+                        coincidencias += 1
+            
+            # Si hay coincidencias, agregar las normativas
+            if coincidencias > 0:
                 for i, normativa in enumerate(normativas, 1):
                     resultado = {
-                        'numero': i,
+                        'numero': len(resultados) + 1,
                         'titulo': normativa['titulo'],
-                        'descripcion': f"Normativa relacionada con {categoria}",
+                        'descripcion': f"Normativa relacionada con {categoria} - {coincidencias} coincidencias",
                         'enlace': f"https://www.bcn.cl/leychile/navegar?idNorma={normativa['numero']}",
                         'numero_ley': normativa['numero'],
                         'tipo_norma': normativa['tipo'],
-                        'relevancia': 4.0 + (0.1 * i)  # Score alto para normativas importantes
+                        'relevancia': 4.0 + (0.1 * coincidencias) + (0.05 * i)  # Score basado en coincidencias
                     }
                     resultados.append(resultado)
         
-        # Si no hay resultados específicos, agregar normativas generales
+        # Si no hay resultados específicos, buscar en normativas generales más amplias
+        if not resultados:
+            # Buscar normativas que contengan cualquier palabra del término
+            for categoria, normativas in normativas_comunes.items():
+                for normativa in normativas:
+                    titulo_lower = normativa['titulo'].lower()
+                    for palabra_termino in terminos_busqueda:
+                        if len(palabra_termino) > 2 and palabra_termino in titulo_lower:
+                            resultado = {
+                                'numero': len(resultados) + 1,
+                                'titulo': normativa['titulo'],
+                                'descripcion': f"Normativa relacionada con {categoria} - búsqueda amplia",
+                                'enlace': f"https://www.bcn.cl/leychile/navegar?idNorma={normativa['numero']}",
+                                'numero_ley': normativa['numero'],
+                                'tipo_norma': normativa['tipo'],
+                                'relevancia': 3.0 + (0.1 * len(resultados))
+                            }
+                            resultados.append(resultado)
+                            break  # Solo agregar una vez por normativa
+        
+        # Si aún no hay resultados, agregar normativas generales básicas
         if not resultados:
             resultados = [
                 {
                     'numero': 1,
+                    'titulo': 'Ley 19.300/1994 - Ley sobre Bases Generales del Medio Ambiente',
+                    'descripcion': 'Marco general de la legislación ambiental chilena',
+                    'enlace': 'https://www.bcn.cl/leychile/navegar?idNorma=30667',
+                    'numero_ley': '19.300',
+                    'tipo_norma': 'Ley',
+                    'relevancia': 3.5
+                },
+                {
+                    'numero': 2,
                     'titulo': 'Constitución Política de la República de Chile',
                     'descripcion': 'Carta fundamental del Estado de Chile',
                     'enlace': 'https://www.bcn.cl/leychile/navegar?idNorma=242302',
@@ -266,7 +389,7 @@ class BCNScraper:
                     'relevancia': 3.0
                 },
                 {
-                    'numero': 2,
+                    'numero': 3,
                     'titulo': 'Código Civil',
                     'descripcion': 'Normas fundamentales del derecho privado',
                     'enlace': 'https://www.bcn.cl/leychile/navegar?idNorma=172986',
@@ -276,8 +399,16 @@ class BCNScraper:
                 }
             ]
         
-        logger.info(f"📋 Generados {len(resultados)} resultados sintéticos para '{termino}'")
-        return resultados[:10]
+        # Ordenar por relevancia y limitar a 10 resultados
+        resultados.sort(key=lambda x: x.get('relevancia', 0), reverse=True)
+        resultados_finales = resultados[:10]
+        
+        # Renumerar
+        for i, resultado in enumerate(resultados_finales, 1):
+            resultado['numero'] = i
+        
+        logger.info(f"📋 Generados {len(resultados_finales)} resultados sintéticos para '{termino}'")
+        return resultados_finales
 
     def _procesar_item_legal(self, item, numero: int) -> Optional[Dict]:
         """Procesa un item legal individual"""
