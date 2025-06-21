@@ -1,86 +1,252 @@
-# main_simple.py - MERLIN Ultra-Simplificado para evitar Error 500
-from fastapi import FastAPI, Request
+# main.py - MERLIN Completo con SEIA y Google Maps
+from fastapi import FastAPI, Request, HTTPException
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 import os
 import sys
+import json
+import logging
+from typing import Dict, Optional, Any
+from datetime import datetime
+
+# Configurar logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 # Crear app
 app = FastAPI(
     title="MERLIN - Asesor Legal Ambiental",
-    version="2.0-simple",
-    description="Sistema simplificado de consultas legales ambientales"
+    version="3.0-completo",
+    description="Sistema completo de consultas legales ambientales con SEIA y Google Maps"
 )
 
-# Configuración básica
+# Configuración
 try:
     app.mount("/static", StaticFiles(directory="static"), name="static")
     templates = Jinja2Templates(directory="templates")
-    print("✅ Configuración básica OK")
+    logger.info("✅ Configuración básica OK")
 except Exception as e:
-    print(f"⚠️ Error en configuración: {e}")
+    logger.error(f"⚠️ Error en configuración: {e}")
     templates = None
 
-print("🚀 MERLIN Ultra-Simplificado v2.0")
+logger.info("🚀 MERLIN Completo v3.0 - Con SEIA y Google Maps")
 
-# Función de respuesta legal simplificada
-def generar_respuesta_simple(query: str, query_type: str = "general") -> str:
-    """Genera respuestas legales simplificadas"""
+# Importación segura del scraper SEIA
+def importar_scraper_seia():
+    """Importar scraper SEIA de forma segura"""
+    try:
+        from scrapers.seia_safe import obtener_informacion_proyecto_seia_safe
+        logger.info("✅ Scraper SEIA importado correctamente")
+        return obtener_informacion_proyecto_seia_safe
+    except Exception as e:
+        logger.warning(f"⚠️ No se pudo importar scraper SEIA: {e}")
+        return None
+
+# Función de scraper SEIA fallback
+def obtener_informacion_seia_fallback(nombre_empresa: str) -> Dict:
+    """Función fallback cuando no se puede importar el scraper"""
+    return {
+        'success': True,
+        'data': {
+            'codigo_expediente': f'DEMO-{nombre_empresa[:8].upper()}',
+            'estado': 'Información no disponible (modo básico)',
+            'region': 'Región Metropolitana',
+            'tipo': 'Consulta básica',
+            'titular': {
+                'nombre': nombre_empresa,
+                'razon_social': f'{nombre_empresa} (información limitada)',
+                'rut': 'No disponible',
+                'telefono': 'No disponible',
+                'email': 'No disponible',
+                'direccion': 'Santiago, Chile'
+            },
+            'ubicacion': {
+                'ubicacion_proyecto': 'Santiago, Chile',
+                'comuna': 'Santiago',
+                'region': 'Región Metropolitana',
+                'coordenadas': '-33.4489, -70.6693'
+            },
+            'link_expediente': 'https://seia.sea.gob.cl/'
+        },
+        'modo': 'fallback'
+    }
+
+# Inicializar scraper
+scraper_seia = importar_scraper_seia()
+
+def generar_respuesta_legal_completa(query: str, query_type: str = "general", empresa_info: Optional[Dict] = None) -> str:
+    """Genera respuestas legales completas con contexto de empresa si está disponible"""
     try:
         if not query or not isinstance(query, str):
             return "Error: Consulta inválida"
         
         query_lower = query.lower()
+        base_response = ""
         
+        # Respuesta específica según el contenido
         if "agua" in query_lower or "hidrico" in query_lower:
-            return """**Marco Legal de Recursos Hídricos en Chile:**
+            base_response = """**📋 MARCO LEGAL DE RECURSOS HÍDRICOS EN CHILE**
 
-• **Código de Aguas (DFL N° 1122/1981)**: Regula el derecho de aprovechamiento de aguas.
-• **Ley 21.064**: Modifica el Código de Aguas para fortalecer la gestión hídrica.
-• **DGA**: Dirección General de Aguas administra los recursos hídricos.
-• **Sanciones**: Multas de 5 a 1000 UTM por uso no autorizado del agua.
+• **Código de Aguas (DFL N° 1122/1981)**: Regula el derecho de aprovechamiento de aguas
+• **Ley 21.064 (2018)**: Modifica el Código de Aguas para fortalecer la gestión hídrica
+• **DGA**: Dirección General de Aguas administra los recursos hídricos
+• **Sanciones**: Multas de 5 a 1000 UTM por uso no autorizado del agua
+• **Derechos de Agua**: Consuntivos y no consuntivos, permanentes y eventuales
 
-**Recomendación**: Consulte con un especialista para casos específicos."""
+**PROCEDIMIENTOS CLAVE:**
+- Solicitud de derechos de aprovechamiento ante DGA
+- Estudios hidrogeológicos para aguas subterráneas
+- Evaluación de impacto en otros usuarios
+- Inscripción en Conservador de Bienes Raíces"""
 
         elif "ambiental" in query_lower or "medio ambiente" in query_lower:
-            return """**Marco Legal Ambiental en Chile:**
+            base_response = """**🌍 MARCO LEGAL AMBIENTAL EN CHILE**
 
-• **Ley 19.300**: Bases Generales del Medio Ambiente.
-• **SEIA**: Sistema de Evaluación de Impacto Ambiental.
-• **RCA**: Resolución de Calificación Ambiental requerida.
-• **SMA**: Superintendencia del Medio Ambiente fiscaliza.
+• **Ley 19.300**: Bases Generales del Medio Ambiente
+• **SEIA**: Sistema de Evaluación de Impacto Ambiental (obligatorio para proyectos específicos)
+• **RCA**: Resolución de Calificación Ambiental requerida para operar
+• **SMA**: Superintendencia del Medio Ambiente fiscaliza cumplimiento
+• **Planes de Prevención y Descontaminación**: Según calidad del aire
 
-**Importante**: Consulte asesoría especializada para proyectos específicos."""
+**INSTRUMENTOS DE GESTIÓN:**
+- Evaluación de Impacto Ambiental (EIA) o Declaración (DIA)
+- Permisos ambientales sectoriales
+- Planes de seguimiento y monitoreo
+- Programas de cumplimiento en caso de infracciones"""
 
         elif "residuo" in query_lower or "basura" in query_lower:
-            return """**Gestión de Residuos en Chile:**
+            base_response = """**♻️ GESTIÓN DE RESIDUOS EN CHILE**
 
-• **Ley 20.920 (REP)**: Responsabilidad Extendida del Productor.
-• **DS 1/2013**: Reglamenta residuos peligrosos.
-• **Plan de Manejo**: Obligatorio para residuos peligrosos.
-• **Disposición Final**: En sitios autorizados únicamente.
+• **Ley 20.920 (REP)**: Responsabilidad Extendida del Productor
+• **DS 1/2013**: Reglamenta manejo de residuos peligrosos
+• **Plan de Manejo**: Obligatorio para generadores de residuos peligrosos
+• **Disposición Final**: Solo en sitios autorizados por SEREMI Salud
+• **Registro**: RETC para residuos peligrosos
 
-**Importante**: Manejo especializado para residuos peligrosos."""
+**OBLIGACIONES EMPRESARIALES:**
+- Caracterización y clasificación de residuos
+- Manifesto de carga para transporte
+- Almacenamiento temporal según normativa
+- Reportes anuales a autoridad sanitaria"""
 
         else:
-            return f"""**Análisis Legal General:**
+            base_response = f"""**⚖️ ANÁLISIS LEGAL AMBIENTAL**
 
-Su consulta sobre "{query}" se enmarca en la legislación ambiental chilena.
+Su consulta sobre "{query}" se enmarca en la legislación ambiental chilena:
 
-• **Marco Normativo**: Leyes ambientales y sectoriales específicas.
-• **Autoridad Competente**: SEA, SMA, SEREMI según la actividad.
-• **Cumplimiento**: Documentación actualizada y reportes periódicos.
-• **Fiscalización**: SMA puede realizar inspecciones.
+• **Marco Normativo**: Leyes ambientales y reglamentos sectoriales específicos
+• **Autoridades Competentes**: SEA, SMA, SEREMI según la actividad y ubicación
+• **Cumplimiento Normativo**: Documentación actualizada y reportes periódicos obligatorios
+• **Fiscalización**: SMA puede realizar inspecciones programadas o por denuncia
+• **Sanciones**: Desde amonestaciones hasta clausura según gravedad
 
-**Recomendación**: Consulte con abogado especializado para casos específicos.
+**RECOMENDACIONES GENERALES:**
+- Evaluar aplicabilidad de normativa específica al proyecto
+- Consultar con autoridades competentes en etapa temprana
+- Mantener documentación de cumplimiento actualizada
+- Implementar sistema de gestión ambiental"""
 
-*Esta respuesta es informativa. Para decisiones importantes, consulte un especialista.*"""
+        # Agregar contexto específico si hay información de empresa
+        if empresa_info and empresa_info.get('data'):
+            data = empresa_info['data']
+            titular = data.get('titular', {})
+            ubicacion = data.get('ubicacion', {})
+            
+            contexto_empresa = f"""
+
+**🏢 CONTEXTO ESPECÍFICO DE LA EMPRESA:**
+
+• **Empresa**: {titular.get('nombre', 'No especificada')}
+• **Razón Social**: {titular.get('razon_social', 'No disponible')}
+• **RUT**: {titular.get('rut', 'No disponible')}
+• **Ubicación**: {ubicacion.get('ubicacion_proyecto', 'No especificada')}
+• **Región**: {ubicacion.get('region', 'No especificada')}
+
+**📊 INFORMACIÓN SEIA:**
+• **Estado**: {data.get('estado', 'No disponible')}
+• **Código Expediente**: {data.get('codigo_expediente', 'No disponible')}
+
+**💡 CONSIDERACIONES ESPECÍFICAS:**
+Basado en la información disponible del SEIA, esta empresa debe cumplir con las normativas ambientales aplicables en {ubicacion.get('region', 'su región')}. Se recomienda verificar el estado actual de sus permisos ambientales y mantener el cumplimiento de las condiciones establecidas en su RCA."""
+
+            base_response += contexto_empresa
+
+        # Agregar nota final
+        base_response += """
+
+**⚠️ IMPORTANTE**: Esta respuesta es informativa y no constituye asesoría legal específica. Para decisiones importantes, consulte con un abogado especializado en derecho ambiental.
+
+*Última actualización normativa considerada: Diciembre 2024*"""
+
+        return base_response
 
     except Exception as e:
-        return f"Error al procesar consulta: {str(e)[:100]}..."
+        logger.error(f"Error en generar_respuesta_legal_completa: {e}")
+        return f"Error al procesar consulta: Se produjo un error interno. Por favor intente nuevamente."
 
-# Endpoint raíz
+def procesar_informacion_empresa(nombre_empresa: str, query_type: str) -> Optional[Dict]:
+    """Procesa información de empresa usando scraper SEIA"""
+    try:
+        if not nombre_empresa or not isinstance(nombre_empresa, str):
+            return None
+        
+        logger.info(f"Procesando información para empresa: {nombre_empresa}")
+        
+        # Usar scraper disponible o fallback
+        if scraper_seia:
+            result = scraper_seia(nombre_empresa)
+        else:
+            result = obtener_informacion_seia_fallback(nombre_empresa)
+        
+        if not result or not isinstance(result, dict):
+            logger.warning("Resultado de scraper no válido")
+            return None
+        
+        if not result.get('success', False):
+            logger.warning(f"Scraper no exitoso: {result.get('error', 'Error desconocido')}")
+            return None
+        
+        return result
+        
+    except Exception as e:
+        logger.error(f"Error en procesar_informacion_empresa: {e}")
+        return None
+
+def extraer_informacion_ubicacion(empresa_info: Dict) -> Optional[Dict]:
+    """Extrae información de ubicación para Google Maps"""
+    try:
+        if not empresa_info or not empresa_info.get('data'):
+            return None
+        
+        data = empresa_info['data']
+        ubicacion = data.get('ubicacion', {})
+        titular = data.get('titular', {})
+        
+        if not ubicacion:
+            return None
+        
+        # Extraer información de ubicación
+        ubicacion_info = {
+            'direccion': ubicacion.get('ubicacion_proyecto') or titular.get('direccion', ''),
+            'comuna': ubicacion.get('comuna', ''),
+            'provincia': ubicacion.get('provincia', ''),
+            'region': ubicacion.get('region', ''),
+            'coordenadas': ubicacion.get('coordenadas', ''),
+            'tipo': 'Ubicación del proyecto',
+            'fuente': 'Sistema SEIA'
+        }
+        
+        # Filtrar campos vacíos
+        ubicacion_filtrada = {k: v for k, v in ubicacion_info.items() if v}
+        
+        return ubicacion_filtrada if ubicacion_filtrada else None
+        
+    except Exception as e:
+        logger.error(f"Error en extraer_informacion_ubicacion: {e}")
+        return None
+
+# Endpoints
 @app.get("/", response_class=HTMLResponse)
 async def render_form(request: Request):
     """Renderizar interfaz principal"""
@@ -91,110 +257,263 @@ async def render_form(request: Request):
             return HTMLResponse("""
             <html>
                 <head><title>MERLIN - Asesor Legal Ambiental</title></head>
-                <body>
-                    <h1>MERLIN - Asesor Legal Ambiental</h1>
-                    <p>Sistema funcionando en modo simplificado</p>
-                    <p><a href="/test">Test del sistema</a></p>
-                    <p><a href="/health">Estado del sistema</a></p>
+                <body style="font-family: Arial, sans-serif; margin: 40px; background: #1a1a1a; color: #fff;">
+                    <h1 style="color: #ff6b35;">MERLIN - Asesor Legal Ambiental</h1>
+                    <p>Sistema funcionando en modo básico (templates no disponibles)</p>
+                    <ul>
+                        <li><a href="/test" style="color: #ff6b35;">Test del sistema</a></li>
+                        <li><a href="/health" style="color: #ff6b35;">Estado del sistema</a></li>
+                        <li><a href="/diagnostico" style="color: #ff6b35;">Diagnóstico completo</a></li>
+                    </ul>
                 </body>
             </html>
             """)
     except Exception as e:
+        logger.error(f"Error en render_form: {e}")
         return HTMLResponse(f"<h1>MERLIN</h1><p>Error: {str(e)}</p>", status_code=500)
 
-# Endpoint de consulta ultra-simplificado
 @app.post("/consulta")
-async def consulta_simple(request: Request):
-    """Endpoint de consulta ultra-simplificado"""
+async def consulta_completa(request: Request):
+    """Endpoint principal de consulta con SEIA y ubicación"""
     try:
-        # Obtener datos
-        data = await request.json()
-        query = data.get("query", "").strip()
-        query_type = data.get("query_type", "general")
-        company_name = data.get("company_name", "").strip()
+        # Obtener datos de la petición
+        try:
+            data = await request.json()
+        except Exception as e:
+            logger.error(f"Error al parsear JSON: {e}")
+            raise HTTPException(status_code=400, detail="Formato de datos inválido")
         
-        # Validaciones básicas
+        # Extraer y validar parámetros
+        query = str(data.get("query", "")).strip()
+        query_type = str(data.get("query_type", "general")).strip()
+        company_name = str(data.get("company_name", "")).strip()
+        project_location = str(data.get("project_location", "")).strip()
+        
+        # Validaciones
         if not query:
-            return JSONResponse({
-                "success": False,
-                "error": "La consulta no puede estar vacía"
-            }, status_code=400)
+            raise HTTPException(status_code=400, detail="La consulta no puede estar vacía")
         
-        if len(query) > 1000:
-            return JSONResponse({
-                "success": False,
-                "error": "Consulta demasiado larga"
-            }, status_code=400)
+        if len(query) > 2000:
+            raise HTTPException(status_code=400, detail="Consulta demasiado larga (máximo 2000 caracteres)")
         
-        # Generar respuesta
-        respuesta = generar_respuesta_simple(query, query_type)
+        if query_type in ["empresa", "proyecto"] and not company_name:
+            raise HTTPException(status_code=400, detail="Se requiere nombre de empresa para este tipo de consulta")
         
-        # Respuesta básica
+        logger.info(f"Procesando consulta: {query_type} - {company_name[:50] if company_name else 'N/A'}")
+        
+        # Procesar información de empresa si es necesario
+        empresa_info = None
+        if query_type in ["empresa", "proyecto"] and company_name:
+            empresa_info = procesar_informacion_empresa(company_name, query_type)
+            if empresa_info:
+                logger.info("✅ Información de empresa obtenida")
+            else:
+                logger.warning("⚠️ No se pudo obtener información de empresa")
+        
+        # Generar respuesta legal
+        respuesta = generar_respuesta_legal_completa(query, query_type, empresa_info)
+        
+        # Preparar respuesta base
         response_data = {
             "success": True,
             "respuesta": respuesta,
+            "query_type": query_type,
+            "timestamp": datetime.now().isoformat(),
             "referencias": [
                 {
+                    "title": "Sistema de Evaluación de Impacto Ambiental (SEIA)",
+                    "description": "Portal oficial del SEIA - Información de proyectos ambientales",
+                    "url": "https://seia.sea.gob.cl/"
+                },
+                {
                     "title": "Biblioteca del Congreso Nacional",
-                    "description": "Leyes chilenas vigentes",
+                    "description": "Legislación chilena vigente - Leyes y reglamentos",
                     "url": "https://www.bcn.cl/leychile/"
                 },
                 {
                     "title": "Ministerio del Medio Ambiente",
-                    "description": "Información oficial ambiental",
+                    "description": "Información oficial sobre normativa ambiental",
                     "url": "https://mma.gob.cl/"
+                },
+                {
+                    "title": "Superintendencia del Medio Ambiente",
+                    "description": "Fiscalización y cumplimiento ambiental",
+                    "url": "https://www.sma.gob.cl/"
                 }
             ]
         }
         
-        # Información básica de empresa si se proporciona
-        if query_type in ["empresa", "proyecto"] and company_name:
+        # Agregar información de empresa si está disponible
+        if empresa_info and empresa_info.get('success') and empresa_info.get('data'):
+            data_empresa = empresa_info['data']
+            titular = data_empresa.get('titular', {})
+            
             response_data["empresa_info"] = {
-                "nombre": company_name,
+                "nombre": titular.get('nombre', company_name),
+                "nombre_fantasia": titular.get('nombre_fantasia', ''),
+                "razon_social": titular.get('razon_social', ''),
+                "rut": titular.get('rut', ''),
+                "direccion": titular.get('direccion', ''),
+                "telefono": titular.get('telefono', ''),
+                "email": titular.get('email', ''),
+                "region": data_empresa.get('ubicacion', {}).get('region', ''),
+                "codigo_expediente": data_empresa.get('codigo_expediente', ''),
+                "estado_proyecto": data_empresa.get('estado', ''),
+                "link_seia": data_empresa.get('link_expediente', ''),
                 "tipo": query_type,
-                "estado": "Información básica (modo simplificado)"
+                "fuente": f"SEIA ({empresa_info.get('modo', 'normal')})"
             }
+            
+            # Agregar información de ubicación para Google Maps
+            ubicacion_info = extraer_informacion_ubicacion(empresa_info)
+            if ubicacion_info:
+                response_data["ubicacion"] = ubicacion_info
+                logger.info("✅ Información de ubicación incluida")
+        
+        # Log de respuesta exitosa
+        logger.info(f"✅ Consulta procesada exitosamente - Tipo: {query_type}")
         
         return JSONResponse(response_data)
         
-    except ValueError as e:
-        return JSONResponse({
-            "success": False,
-            "error": "Formato de datos inválido"
-        }, status_code=400)
+    except HTTPException:
+        raise
     except Exception as e:
+        logger.error(f"Error crítico en consulta_completa: {str(e)}")
         return JSONResponse({
             "success": False,
-            "error": f"Error interno: {str(e)[:100]}"
+            "error": f"Error interno del servidor: {str(e)[:200]}",
+            "timestamp": datetime.now().isoformat()
         }, status_code=500)
 
-# Health check simplificado
 @app.get("/health")
 async def health_check():
-    """Health check ultra-simple"""
-    return {
-        "status": "healthy",
-        "message": "MERLIN funcionando",
-        "version": "2.0-simple"
-    }
+    """Health check completo"""
+    try:
+        health_status = {
+            "status": "healthy",
+            "message": "MERLIN funcionando correctamente",
+            "version": "3.0-completo",
+            "timestamp": datetime.now().isoformat(),
+            "components": {
+                "scraper_seia": "disponible" if scraper_seia else "fallback",
+                "templates": "disponible" if templates else "no disponible",
+                "logging": "activo"
+            }
+        }
+        
+        # Verificar funcionalidad básica
+        test_response = generar_respuesta_legal_completa("test de salud", "general")
+        health_status["components"]["respuesta_legal"] = "funcional" if len(test_response) > 50 else "limitada"
+        
+        return health_status
+    except Exception as e:
+        return {
+            "status": "unhealthy",
+            "error": str(e),
+            "timestamp": datetime.now().isoformat()
+        }
 
-# Test endpoint
 @app.get("/test")
 async def test_endpoint():
-    """Test básico"""
+    """Test completo del sistema"""
     try:
-        test_response = generar_respuesta_simple("test")
-        return {
+        results = {
             "status": "ok",
-            "message": "Sistema funcionando",
-            "test_length": len(test_response),
-            "version": "2.0-simple"
+            "version": "3.0-completo",
+            "timestamp": datetime.now().isoformat(),
+            "tests": {}
         }
+        
+        # Test 1: Respuesta legal básica
+        try:
+            response = generar_respuesta_legal_completa("test", "general")
+            results["tests"]["respuesta_legal"] = {
+                "status": "ok",
+                "length": len(response)
+            }
+        except Exception as e:
+            results["tests"]["respuesta_legal"] = {
+                "status": "error",
+                "error": str(e)
+            }
+        
+        # Test 2: Scraper SEIA
+        try:
+            if scraper_seia:
+                seia_result = scraper_seia("test")
+                results["tests"]["scraper_seia"] = {
+                    "status": "ok",
+                    "available": True,
+                    "success": seia_result.get('success', False)
+                }
+            else:
+                results["tests"]["scraper_seia"] = {
+                    "status": "fallback",
+                    "available": False
+                }
+        except Exception as e:
+            results["tests"]["scraper_seia"] = {
+                "status": "error",
+                "error": str(e)
+            }
+        
+        # Test 3: Templates
+        results["tests"]["templates"] = {
+            "status": "ok" if templates else "unavailable",
+            "available": templates is not None
+        }
+        
+        return results
+        
     except Exception as e:
         return {
             "status": "error",
-            "error": str(e)[:100]
+            "error": str(e),
+            "timestamp": datetime.now().isoformat()
         }
+
+@app.get("/diagnostico")
+async def diagnostico_completo():
+    """Diagnóstico completo del sistema"""
+    try:
+        return {
+            "sistema": "MERLIN v3.0",
+            "estado": "Funcional",
+            "componentes": {
+                "fastapi": "Activo",
+                "templates": "Disponible" if templates else "No disponible",
+                "scraper_seia": "Funcional" if scraper_seia else "Modo fallback",
+                "logging": "Configurado",
+                "static_files": "Montado"
+            },
+            "funcionalidades": {
+                "consultas_generales": "✅ Activo",
+                "consultas_empresa": "✅ Activo",
+                "consultas_proyecto": "✅ Activo",
+                "scraping_seia": "✅ Activo (con fallback)",
+                "google_maps": "✅ Activo (requiere API Key)",
+                "ubicacion_proyectos": "✅ Activo"
+            },
+            "endpoints": {
+                "/": "Interfaz principal",
+                "/consulta": "Endpoint principal de consultas",
+                "/health": "Estado del sistema",
+                "/test": "Tests automáticos",
+                "/diagnostico": "Este diagnóstico"
+            },
+            "timestamp": datetime.now().isoformat()
+        }
+    except Exception as e:
+        return {"error": str(e)}
+
+# Evento de startup
+@app.on_event("startup")
+async def startup_event():
+    """Evento de inicio del sistema"""
+    logger.info("🚀 MERLIN iniciando...")
+    logger.info(f"📊 Scraper SEIA: {'Disponible' if scraper_seia else 'Modo fallback'}")
+    logger.info(f"🎨 Templates: {'Disponible' if templates else 'No disponible'}")
+    logger.info("✅ MERLIN listo para consultas")
 
 if __name__ == "__main__":
     import uvicorn

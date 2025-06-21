@@ -10,6 +10,20 @@
     
     <!-- Google Maps API Script -->
     <script async defer src="https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY&libraries=places&callback=initMap"></script>
+    
+    <!-- Fallback para cuando Google Maps no esté disponible -->
+    <script>
+        window.addEventListener('error', function(e) {
+            if (e.message && e.message.includes('maps')) {
+                console.log('Google Maps API no disponible, usando fallback');
+                setTimeout(() => {
+                    if (typeof google === 'undefined') {
+                        initMapFallback();
+                    }
+                }, 2000);
+            }
+        });
+    </script>
 
 
     <style>
