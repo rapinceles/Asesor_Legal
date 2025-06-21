@@ -1,1 +1,1 @@
-web: gunicorn main:app -w 2 -k uvicorn.workers.UvicornWorker --bind 0.0.0.0:$PORT --timeout 120 --keep-alive 5 --max-requests 1000 --max-requests-jitter 100
+web: gunicorn main:app -c gunicorn_config.py

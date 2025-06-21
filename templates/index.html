@@ -9,20 +9,22 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&family=Orbitron:wght@400;700;900&family=Dancing+Script:wght@400;500;600;700&display=swap" rel="stylesheet">
     
     <!-- Google Maps API Script -->
-    <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDVQ6eab8AerCjUCaa00pdHGGp5pHH3mUY&libraries=places&callback=initMap"></script>
-    
-    <!-- Fallback para cuando Google Maps no esté disponible -->
     <script>
-        window.addEventListener('error', function(e) {
-            if (e.message && e.message.includes('maps')) {
-                console.log('Google Maps API no disponible, usando fallback');
-                setTimeout(() => {
-                    if (typeof google === 'undefined') {
-                        initMapFallback();
-                    }
-                }, 2000);
-            }
-        });
+        // Función para cargar Google Maps de forma segura
+        function loadGoogleMaps() {
+            const script = document.createElement('script');
+            script.src = 'https://maps.googleapis.com/maps/api/js?key=AIzaSyDVQ6eab8AerCjUCaa00pdHGGp5pHH3mUY&libraries=places&callback=initMap';
+            script.async = true;
+            script.defer = true;
+            script.onerror = function() {
+                console.log('Error cargando Google Maps, usando fallback');
+                setTimeout(initMapFallback, 1000);
+            };
+            document.head.appendChild(script);
+        }
+        
+        // Cargar al finalizar DOM
+        document.addEventListener('DOMContentLoaded', loadGoogleMaps);
     </script>
 
 
@@ -446,45 +448,29 @@
                     <label class="options-label">⚙️ Tipo de consulta</label>
                     <div class="radio-group">
                         <div class="radio-option">
-                            <input type="radio" id="general" name="query_type" value="general" checked>
-                            <label for="general">General</label>
-                        </div>
-                        <div class="radio-option">
-                            <input type="radio" id="empresa" name="query_type" value="empresa">
-                            <label for="empresa">Empresa</label>
+                            <input type="radio" id="legal" name="query_type" value="legal" checked>
+                            <label for="legal">Legal</label>
                         </div>
                         <div class="radio-option">
                             <input type="radio" id="proyecto" name="query_type" value="proyecto">
-                            <label for="proyecto">Proyecto</label>
+                            <label for="proyecto">Proyecto SEIA</label>
                         </div>
                     </div>
                 </div>
 
                 <div class="company-section" id="company-section">
                     <div class="company-input">
-                        <label for="company-name">🏢 Nombre de la empresa</label>
+                        <label for="company-name">🏢 Nombre de la empresa o proyecto</label>
                         <input 
                             type="text" 
                             id="company-name" 
                             name="company_name"
-                            placeholder="Ingresa el nombre de la empresa"
+                            placeholder="Ingresa el nombre para buscar en SEIA"
                         >
                     </div>
                 </div>
 
                 <div class="map-section" id="map-section">
-                    <div class="location-input">
-                        <label for="project-location">📍 Ubicación del proyecto</label>
-                        <input 
-                            type="text" 
-                            id="project-location" 
-                            name="project_location"
-                            placeholder="Ingresa la dirección o coordenadas del proyecto (ej: Santiago, Chile)"
-                        >
-                        <button type="button" class="map-button" onclick="buscarUbicacion()">
-                            🗺️ Mostrar en Mapa
-                        </button>
-                    </div>
                     <div class="map-container">
                         <div id="map"></div>
                     </div>
@@ -525,21 +511,27 @@
             // Manejar cambio de tipo de consulta
             queryTypeInputs.forEach(input => {
                 input.addEventListener('change', function() {
-                    if (this.value === 'empresa' || this.value === 'proyecto') {
+                    const mapSection = document.getElementById('map-section');
+                    
+                    if (this.value === 'proyecto') {
+                        // Para proyectos SEIA: mostrar campo de empresa y mapa
                         companySection.classList.add('visible');
                         document.getElementById('company-name').required = true;
+                        mapSection.classList.add('visible');
                         
-                        // Mostrar sección del mapa solo para proyectos
-                        const mapSection = document.getElementById('map-section');
-                        if (this.value === 'proyecto') {
-                            mapSection.classList.add('visible');
-                        } else {
-                            mapSection.classList.remove('visible');
-                        }
+                        // Cambiar placeholder y label para proyectos
+                        document.getElementById('query').placeholder = "Ejemplo: ¿Qué información ambiental tiene este proyecto? ¿Cuál es su estado en el SEIA?";
+                        document.querySelector('.search-label').innerHTML = '🔍 Consulta sobre el proyecto';
+                        
                     } else {
+                        // Para consultas legales: solo mostrar campo de consulta
                         companySection.classList.remove('visible');
                         document.getElementById('company-name').required = false;
-                        document.getElementById('map-section').classList.remove('visible');
+                        mapSection.classList.remove('visible');
+                        
+                        // Cambiar placeholder y label para legal
+                        document.getElementById('query').placeholder = "Ejemplo: ¿Cuáles son los requisitos para obtener una RCA? ¿Qué dice la Ley 19.300 sobre evaluación ambiental?";
+                        document.querySelector('.search-label').innerHTML = '🔍 Ingresa tu consulta legal ambiental';
                     }
                 });
             });
@@ -561,8 +553,8 @@
                 return;
             }
 
-            if ((queryType === 'empresa' || queryType === 'proyecto') && !companyName) {
-                showError('Por favor ingresa el nombre de la empresa');
+            if (queryType === 'proyecto' && !companyName) {
+                showError('Por favor ingresa el nombre de la empresa o proyecto para buscar en SEIA');
                 return;
             }
 
@@ -582,8 +574,7 @@
                     body: JSON.stringify({
                         query: query,
                         query_type: queryType,
-                        company_name: companyName || null,
-                        project_location: document.getElementById('project-location').value.trim() || null
+                        company_name: companyName || null
                     })
                 });
 

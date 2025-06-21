@@ -43,6 +43,28 @@ def importar_scraper_seia():
         logger.warning(f"⚠️ No se pudo importar scraper SEIA: {e}")
         return None
 
+# Importación del scraper por titular
+def importar_scraper_titular():
+    """Importar scraper por titular de forma segura"""
+    try:
+        from scrapers.seia_titular import buscar_proyectos_por_titular
+        logger.info("✅ Scraper por titular importado correctamente")
+        return buscar_proyectos_por_titular
+    except Exception as e:
+        logger.warning(f"⚠️ No se pudo importar scraper por titular: {e}")
+        return None
+
+# Importación del scraper BCN para consultas legales
+def importar_scraper_bcn():
+    """Importar scraper BCN de forma segura"""
+    try:
+        from scrapers.bcn_legal import buscar_normativa_bcn
+        logger.info("✅ Scraper BCN importado correctamente")
+        return buscar_normativa_bcn
+    except Exception as e:
+        logger.warning(f"⚠️ No se pudo importar scraper BCN: {e}")
+        return None
+
 # Función de scraper SEIA fallback
 def obtener_informacion_seia_fallback(nombre_empresa: str) -> Dict:
     """Función fallback cuando no se puede importar el scraper"""
@@ -72,8 +94,10 @@ def obtener_informacion_seia_fallback(nombre_empresa: str) -> Dict:
         'modo': 'fallback'
     }
 
-# Inicializar scraper
+# Inicializar scrapers
 scraper_seia = importar_scraper_seia()
+scraper_titular = importar_scraper_titular()
+scraper_bcn = importar_scraper_bcn()
 
 def generar_respuesta_legal_completa(query: str, query_type: str = "general", empresa_info: Optional[Dict] = None) -> str:
     """Genera respuestas legales completas con contexto de empresa si está disponible"""
@@ -81,6 +105,11 @@ def generar_respuesta_legal_completa(query: str, query_type: str = "general", em
         if not query or not isinstance(query, str):
             return "Error: Consulta inválida"
         
+        # Para consultas legales, usar BCN
+        if query_type == "legal":
+            return generar_respuesta_legal_bcn(query)
+        
+        # Para proyectos, usar la lógica existente
         query_lower = query.lower()
         base_response = ""
         
@@ -185,33 +214,200 @@ Basado en la información disponible del SEIA, esta empresa debe cumplir con las
         logger.error(f"Error en generar_respuesta_legal_completa: {e}")
         return f"Error al procesar consulta: Se produjo un error interno. Por favor intente nuevamente."
 
+def generar_respuesta_legal_bcn(query: str) -> str:
+    """Genera respuesta legal usando el scraper BCN"""
+    try:
+        logger.info(f"🔍 Buscando normativa legal para: {query}")
+        
+        if scraper_bcn:
+            # Buscar en BCN
+            resultado_bcn = scraper_bcn(query)
+            
+            if resultado_bcn and resultado_bcn.get('success') and resultado_bcn.get('resultados'):
+                resultados = resultado_bcn['resultados']
+                total = resultado_bcn.get('total_resultados', len(resultados))
+                
+                logger.info(f"✅ Encontradas {total} normas en BCN")
+                
+                # Construir respuesta con los resultados
+                respuesta = f"""**⚖️ NORMATIVA LEGAL ENCONTRADA**
+
+Se encontraron **{total} normas** relacionadas con su consulta "{query}":
+
+"""
+                
+                # Agregar hasta 5 resultados principales
+                for i, norma in enumerate(resultados[:5], 1):
+                    titulo = norma.get('titulo', 'Sin título')
+                    tipo_norma = norma.get('tipo_norma', 'Norma')
+                    numero_ley = norma.get('numero_ley', '')
+                    enlace = norma.get('enlace', '')
+                    relevancia = norma.get('relevancia', 0)
+                    
+                    respuesta += f"""**{i}. {tipo_norma} {numero_ley}**
+📋 **Título**: {titulo}
+🔗 **Enlace**: [Ver normativa completa]({enlace})
+⭐ **Relevancia**: {relevancia:.1f}/5.0
+
+"""
+                
+                # Agregar recomendaciones
+                respuesta += """**💡 RECOMENDACIONES:**
+
+• Revise el texto completo de las normas más relevantes haciendo clic en los enlaces
+• Verifique la vigencia actual de las normas consultadas
+• Para interpretación específica, consulte con un abogado especializado
+• Mantenga actualizada su información sobre cambios normativos
+
+**⚠️ IMPORTANTE**: Esta información es referencial y no constituye asesoría legal específica. Para decisiones importantes, consulte con un profesional del derecho.
+
+*Fuente: Biblioteca del Congreso Nacional (BCN) - www.bcn.cl*"""
+                
+                return respuesta
+                
+            else:
+                logger.warning("⚠️ No se encontraron resultados en BCN")
+                return generar_respuesta_legal_fallback(query)
+        
+        else:
+            logger.warning("⚠️ Scraper BCN no disponible")
+            return generar_respuesta_legal_fallback(query)
+            
+    except Exception as e:
+        logger.error(f"❌ Error en generar_respuesta_legal_bcn: {e}")
+        return generar_respuesta_legal_fallback(query)
+
+def generar_respuesta_legal_fallback(query: str) -> str:
+    """Genera respuesta legal básica cuando BCN no está disponible"""
+    query_lower = query.lower()
+    
+    # Identificar tema principal
+    if any(palabra in query_lower for palabra in ['agua', 'hídrico', 'río', 'pozo']):
+        tema = "recursos hídricos"
+        normativa_principal = "Código de Aguas (DFL N° 1122/1981)"
+    elif any(palabra in query_lower for palabra in ['ambiental', 'medio ambiente', 'seia', 'rca']):
+        tema = "medio ambiente"
+        normativa_principal = "Ley 19.300 - Bases Generales del Medio Ambiente"
+    elif any(palabra in query_lower for palabra in ['residuo', 'basura', 'desecho']):
+        tema = "gestión de residuos"
+        normativa_principal = "Ley 20.920 - Responsabilidad Extendida del Productor"
+    elif any(palabra in query_lower for palabra in ['minería', 'minero', 'extracción']):
+        tema = "minería"
+        normativa_principal = "Código de Minería (Ley 18.248)"
+    else:
+        tema = "derecho ambiental general"
+        normativa_principal = "Marco normativo ambiental chileno"
+    
+    return f"""**⚖️ CONSULTA LEGAL: {tema.upper()}**
+
+Su consulta sobre "{query}" se relaciona con **{tema}**.
+
+**📋 NORMATIVA PRINCIPAL:**
+• {normativa_principal}
+
+**🔍 PARA INFORMACIÓN DETALLADA:**
+• Visite: https://www.bcn.cl/leychile/
+• Consulte el portal oficial de normativa chilena
+• Busque por palabras clave relacionadas con su consulta
+
+**💡 RECOMENDACIONES:**
+• Consulte la normativa específica en el portal BCN
+• Verifique modificaciones y actualizaciones recientes
+• Para interpretación específica, consulte con un abogado especializado
+
+**⚠️ IMPORTANTE**: Esta respuesta es informativa y no constituye asesoría legal específica.
+
+*Para acceder a la normativa completa, visite: https://www.bcn.cl/leychile/consulta/listado_n_sel?agr=2*"""
+
 def procesar_informacion_empresa(nombre_empresa: str, query_type: str) -> Optional[Dict]:
-    """Procesa información de empresa usando scraper SEIA"""
+    """Procesa información de empresa usando scraper por titular o SEIA"""
     try:
         if not nombre_empresa or not isinstance(nombre_empresa, str):
             return None
         
         logger.info(f"Procesando información para empresa: {nombre_empresa}")
         
-        # Usar scraper disponible o fallback
+        # Prioridad 1: Usar scraper por titular para búsqueda específica
+        if scraper_titular:
+            try:
+                logger.info("🔍 Intentando búsqueda por titular específico")
+                result_titular = scraper_titular(nombre_empresa)
+                
+                if result_titular and result_titular.get('success'):
+                    data = result_titular.get('data', {})
+                    lista_proyectos = data.get('lista_proyectos', [])
+                    
+                    # Si hay proyectos, siempre devolver para selección (incluso si es uno solo)
+                    if len(lista_proyectos) > 0:
+                        logger.info(f"✅ Encontrados {len(lista_proyectos)} proyectos para selección")
+                        return {
+                            'success': True,
+                            'requiere_seleccion': True,
+                            'lista_proyectos': lista_proyectos,
+                            'stats': result_titular.get('stats', {}),
+                            'modo': 'titular_multiple'
+                        }
+                    
+                    # Si hay un solo proyecto, estructurar datos
+                    elif len(lista_proyectos) == 1:
+                        proyecto = lista_proyectos[0]
+                        logger.info("✅ Proyecto único encontrado por titular")
+                        return {
+                            'success': True,
+                            'data': {
+                                'codigo_expediente': proyecto.get('link_expediente', '').split('=')[-1] if proyecto.get('link_expediente') else 'N/A',
+                                'nombre': proyecto.get('nombre', ''),
+                                'estado': proyecto.get('estado', ''),
+                                'region': proyecto.get('region', ''),
+                                'tipo': proyecto.get('tipo', ''),
+                                'fecha_presentacion': proyecto.get('fecha', ''),
+                                'inversion': proyecto.get('inversion', ''),
+                                'link_expediente': proyecto.get('link_expediente', ''),
+                                'titular': {
+                                    'nombre': proyecto.get('titular', nombre_empresa),
+                                    'nombre_fantasia': proyecto.get('titular', nombre_empresa),
+                                    'razon_social': proyecto.get('razon_social_completa', ''),
+                                    'rut': proyecto.get('rut', ''),
+                                    'direccion': proyecto.get('direccion_titular', ''),
+                                    'telefono': proyecto.get('telefono', ''),
+                                    'email': proyecto.get('email', '')
+                                },
+                                'ubicacion': {
+                                    'region': proyecto.get('region', ''),
+                                    'ubicacion_proyecto': proyecto.get('ubicacion_detallada', proyecto.get('region', '')),
+                                    'comuna': proyecto.get('comuna', ''),
+                                    'provincia': proyecto.get('provincia', ''),
+                                    'coordenadas': ''
+                                }
+                            },
+                            'modo': 'titular_unico'
+                        }
+                
+                logger.info("⚠️ Scraper por titular no encontró resultados, probando scraper SEIA")
+                
+            except Exception as e:
+                logger.warning(f"Error en scraper por titular: {e}")
+        
+        # Prioridad 2: Usar scraper SEIA como fallback
         if scraper_seia:
-            result = scraper_seia(nombre_empresa)
-        else:
-            result = obtener_informacion_seia_fallback(nombre_empresa)
+            try:
+                logger.info("🔍 Usando scraper SEIA como fallback")
+                result = scraper_seia(nombre_empresa)
+                
+                if result and result.get('success'):
+                    logger.info("✅ Información obtenida con scraper SEIA")
+                    return result
+                
+            except Exception as e:
+                logger.warning(f"Error en scraper SEIA: {e}")
         
-        if not result or not isinstance(result, dict):
-            logger.warning("Resultado de scraper no válido")
-            return None
-        
-        if not result.get('success', False):
-            logger.warning(f"Scraper no exitoso: {result.get('error', 'Error desconocido')}")
-            return None
-        
-        return result
+        # Prioridad 3: Fallback básico
+        logger.info("⚠️ Usando fallback básico")
+        return obtener_informacion_seia_fallback(nombre_empresa)
         
     except Exception as e:
         logger.error(f"Error en procesar_informacion_empresa: {e}")
-        return None
+        return obtener_informacion_seia_fallback(nombre_empresa)
 
 def extraer_informacion_ubicacion(empresa_info: Dict) -> Optional[Dict]:
     """Extrae información de ubicación para Google Maps"""
@@ -289,21 +485,23 @@ async def consulta_completa(request: Request):
         company_name = str(data.get("company_name", "")).strip()
         project_location = str(data.get("project_location", "")).strip()
         
-        # Validaciones
-        if not query:
-            raise HTTPException(status_code=400, detail="La consulta no puede estar vacía")
+        # Validaciones específicas por tipo
+        if query_type == "legal":
+            if not query:
+                raise HTTPException(status_code=400, detail="Para consultas legales se requiere una pregunta específica")
+        elif query_type == "proyecto":
+            if not company_name:
+                raise HTTPException(status_code=400, detail="Para búsqueda de proyectos se requiere nombre de empresa o proyecto")
         
-        if len(query) > 2000:
+        # Validación de longitud solo si hay query
+        if query and len(query) > 2000:
             raise HTTPException(status_code=400, detail="Consulta demasiado larga (máximo 2000 caracteres)")
-        
-        if query_type in ["empresa", "proyecto"] and not company_name:
-            raise HTTPException(status_code=400, detail="Se requiere nombre de empresa para este tipo de consulta")
         
         logger.info(f"Procesando consulta: {query_type} - {company_name[:50] if company_name else 'N/A'}")
         
         # Procesar información de empresa si es necesario
         empresa_info = None
-        if query_type in ["empresa", "proyecto"] and company_name:
+        if query_type == "proyecto" and company_name:
             empresa_info = procesar_informacion_empresa(company_name, query_type)
             if empresa_info:
                 logger.info("✅ Información de empresa obtenida")
@@ -335,6 +533,10 @@ async def consulta_completa(request: Request):
                 logger.warning("⚠️ No se pudo obtener información de empresa")
         
         # Generar respuesta legal
+        if query_type == "proyecto" and not query:
+            # Para proyectos sin consulta, generar respuesta básica
+            query = f"Información del proyecto de {company_name}"
+        
         respuesta = generar_respuesta_legal_completa(query, query_type, empresa_info)
         
         # Preparar respuesta base
@@ -556,26 +758,64 @@ async def seleccionar_proyecto(request: Request):
 
 @app.get("/health")
 async def health_check():
-    """Health check completo"""
+    """Health check completo y robusto"""
     try:
         health_status = {
             "status": "healthy",
             "message": "MERLIN funcionando correctamente",
             "version": "3.0-completo",
             "timestamp": datetime.now().isoformat(),
-            "components": {
-                "scraper_seia": "disponible" if scraper_seia else "fallback",
-                "templates": "disponible" if templates else "no disponible",
-                "logging": "activo"
-            }
+            "components": {}
         }
         
-        # Verificar funcionalidad básica
-        test_response = generar_respuesta_legal_completa("test de salud", "general")
-        health_status["components"]["respuesta_legal"] = "funcional" if len(test_response) > 50 else "limitada"
+        # Verificar componentes críticos
+        try:
+            # Test scraper SEIA
+            health_status["components"]["scraper_seia"] = "disponible" if scraper_seia else "fallback"
+            
+            # Test scraper titular
+            health_status["components"]["scraper_titular"] = "disponible" if scraper_titular else "no disponible"
+            
+            # Test templates
+            health_status["components"]["templates"] = "disponible" if templates else "no disponible"
+            
+            # Test respuesta legal
+            test_response = generar_respuesta_legal_completa("test de salud", "general")
+            health_status["components"]["respuesta_legal"] = "funcional" if len(test_response) > 50 else "limitada"
+            
+            # Test conexión a SEIA (rápido)
+            try:
+                import requests
+                response = requests.get("https://seia.sea.gob.cl", timeout=5)
+                health_status["components"]["conexion_seia"] = "disponible" if response.status_code == 200 else "limitada"
+            except:
+                health_status["components"]["conexion_seia"] = "no disponible"
+            
+            # Test importaciones críticas
+            try:
+                from bs4 import BeautifulSoup
+                health_status["components"]["beautifulsoup"] = "disponible"
+            except:
+                health_status["components"]["beautifulsoup"] = "no disponible"
+            
+            health_status["components"]["logging"] = "activo"
+            
+            # Verificar si algún componente crítico falla
+            componentes_criticos = ["scraper_seia", "respuesta_legal"]
+            for componente in componentes_criticos:
+                if health_status["components"].get(componente) not in ["disponible", "funcional"]:
+                    health_status["status"] = "degraded"
+                    health_status["message"] = f"Componente crítico {componente} con problemas"
+        
+        except Exception as component_error:
+            health_status["status"] = "degraded"
+            health_status["message"] = f"Error verificando componentes: {str(component_error)}"
+            health_status["components"]["error"] = str(component_error)
         
         return health_status
+        
     except Exception as e:
+        logger.error(f"Error crítico en health check: {e}")
         return {
             "status": "unhealthy",
             "error": str(e),
@@ -675,14 +915,24 @@ async def diagnostico_completo():
     except Exception as e:
         return {"error": str(e)}
 
-# Evento de startup
-@app.on_event("startup")
-async def startup_event():
-    """Evento de inicio del sistema"""
+# Evento de startup usando lifespan
+from contextlib import asynccontextmanager
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Manejo del ciclo de vida de la aplicación"""
+    # Startup
     logger.info("🚀 MERLIN iniciando...")
     logger.info(f"📊 Scraper SEIA: {'Disponible' if scraper_seia else 'Modo fallback'}")
+    logger.info(f"🎯 Scraper Titular: {'Disponible' if scraper_titular else 'No disponible'}")
     logger.info(f"🎨 Templates: {'Disponible' if templates else 'No disponible'}")
     logger.info("✅ MERLIN listo para consultas")
+    yield
+    # Shutdown
+    logger.info("👋 MERLIN cerrando...")
+
+# Aplicar lifespan al app
+app.router.lifespan_context = lifespan
 
 if __name__ == "__main__":
     import uvicorn

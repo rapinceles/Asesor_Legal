@@ -45,7 +45,10 @@ class SEIATitularScraper:
                 logger.info(f"📋 Probando búsqueda con: {variacion}")
                 proyectos = self._buscar_con_variacion(variacion)
                 if proyectos:
+                    logger.info(f"✅ Encontrados {len(proyectos)} proyectos con '{variacion}'")
                     todos_proyectos.extend(proyectos)
+                else:
+                    logger.info(f"⚠️ Sin proyectos encontrados con '{variacion}'")
             
             if not todos_proyectos:
                 return {
@@ -55,14 +58,30 @@ class SEIATitularScraper:
                 }
             
             # Filtrar proyectos únicos y relevantes
+            logger.info(f"🔍 Filtrando {len(todos_proyectos)} proyectos encontrados para '{nombre_empresa}'")
             proyectos_filtrados = self._filtrar_proyectos_por_titular(todos_proyectos, nombre_empresa)
+            logger.info(f"📊 Proyectos después del filtrado: {len(proyectos_filtrados)}")
             
             if not proyectos_filtrados:
+                # Si no hay proyectos filtrados, devolver los primeros proyectos encontrados
+                logger.warning(f"⚠️ No se encontraron coincidencias específicas para {nombre_empresa}, devolviendo proyectos generales")
+                proyectos_generales = todos_proyectos[:10]  # Tomar los primeros 10
+                for i, proyecto in enumerate(proyectos_generales):
+                    proyecto['score_relevancia'] = 1.0  # Score bajo
+                    proyecto['coincidencia'] = 'búsqueda general'
+                    proyecto['id_proyecto'] = i + 1
+                
                 return {
-                    'success': False,
-                    'error': f'No se encontraron proyectos relevantes para: {nombre_empresa}',
-                    'proyectos_encontrados': len(todos_proyectos),
-                    'lista_proyectos': [p.get('nombre', 'Sin nombre') for p in todos_proyectos[:5]]
+                    'success': True,
+                    'data': {
+                        'titular_buscado': nombre_empresa,
+                        'proyectos_encontrados': len(proyectos_generales),
+                        'lista_proyectos': proyectos_generales,
+                        'proyecto_principal': proyectos_generales[0] if proyectos_generales else None
+                    },
+                    'variaciones_usadas': variaciones_titular,
+                    'total_encontrados': len(todos_proyectos),
+                    'filtrado': 'general'
                 }
             
             return {
@@ -285,18 +304,42 @@ class SEIATitularScraper:
             
             # Verificar coincidencias con palabras clave
             coincidencia_encontrada = False
-            for palabra in palabras_clave:
-                if (palabra in titular or 
-                    palabra in nombre_proyecto):
-                    proyecto['coincidencia'] = palabra
-                    proyecto['score_relevancia'] = self._calcular_score_relevancia(titular, nombre_proyecto, palabra)
-                    proyectos_filtrados.append(proyecto)
-                    coincidencia_encontrada = True
-                    logger.info(f"✅ Coincidencia '{palabra}': {proyecto.get('nombre', 'N/A')} - {titular}")
-                    break
+            mejor_score = 0
+            mejor_palabra = ""
             
+            for palabra in palabras_clave:
+                if (palabra in titular or palabra in nombre_proyecto):
+                    score = self._calcular_score_relevancia(titular, nombre_proyecto, palabra)
+                    if score > mejor_score:
+                        mejor_score = score
+                        mejor_palabra = palabra
+                        coincidencia_encontrada = True
+            
+            # Si no hay coincidencia exacta, usar criterio más flexible
             if not coincidencia_encontrada:
-                logger.debug(f"❌ Sin coincidencia: {proyecto.get('nombre', 'N/A')} - {titular}")
+                # Buscar coincidencias parciales
+                for palabra in palabras_clave:
+                    palabras_titular = titular.split()
+                    for palabra_titular in palabras_titular:
+                        if (len(palabra_titular) > 3 and palabra_titular in palabra) or \
+                           (len(palabra) > 3 and palabra in palabra_titular):
+                            score = self._calcular_score_relevancia(titular, nombre_proyecto, palabra) * 0.7
+                            if score > mejor_score:
+                                mejor_score = score
+                                mejor_palabra = f"{palabra} (parcial)"
+                                coincidencia_encontrada = True
+            
+            if coincidencia_encontrada:
+                proyecto['coincidencia'] = mejor_palabra
+                proyecto['score_relevancia'] = mejor_score
+                proyectos_filtrados.append(proyecto)
+                logger.info(f"✅ Coincidencia '{mejor_palabra}': {proyecto.get('nombre', 'N/A')} - {titular}")
+            else:
+                # Si aún no hay coincidencia, incluir todos los proyectos con score bajo
+                proyecto['coincidencia'] = "búsqueda general"
+                proyecto['score_relevancia'] = 1.0
+                proyectos_filtrados.append(proyecto)
+                logger.debug(f"⚠️ Incluido sin coincidencia específica: {proyecto.get('nombre', 'N/A')} - {titular}")
         
         # Ordenar por score de relevancia
         proyectos_filtrados.sort(key=lambda x: x.get('score_relevancia', 0), reverse=True)
@@ -308,18 +351,57 @@ class SEIATitularScraper:
         empresa_lower = empresa.lower()
         palabras = [empresa_lower]
         
-        if 'candelaria' in empresa_lower:
-            palabras.extend(['candelaria', 'contractual minera candelaria', 'compañía contractual minera candelaria'])
-        elif 'codelco' in empresa_lower:
-            palabras.extend(['codelco', 'corporación nacional del cobre'])
-        elif 'antofagasta' in empresa_lower:
-            palabras.extend(['antofagasta', 'antofagasta minerals'])
-        elif 'escondida' in empresa_lower:
-            palabras.extend(['escondida', 'minera escondida'])
-        elif 'bhp' in empresa_lower:
-            palabras.extend(['bhp', 'bhp billiton'])
+        # Agregar palabras individuales de la empresa
+        palabras_empresa = empresa_lower.split()
+        for palabra in palabras_empresa:
+            if len(palabra) > 2:  # Solo palabras de más de 2 caracteres
+                palabras.append(palabra)
         
-        return palabras
+        if 'candelaria' in empresa_lower:
+            palabras.extend([
+                'candelaria', 
+                'contractual minera candelaria', 
+                'compañía contractual minera candelaria',
+                'compania contractual minera candelaria',
+                'minera candelaria',
+                'contractual',
+                'minera'
+            ])
+        elif 'codelco' in empresa_lower:
+            palabras.extend([
+                'codelco', 
+                'corporación nacional del cobre',
+                'corporacion nacional del cobre',
+                'nacional del cobre',
+                'cobre'
+            ])
+        elif 'antofagasta' in empresa_lower:
+            palabras.extend([
+                'antofagasta', 
+                'antofagasta minerals',
+                'minerals',
+                'minera antofagasta'
+            ])
+        elif 'escondida' in empresa_lower:
+            palabras.extend([
+                'escondida', 
+                'minera escondida',
+                'bhp escondida'
+            ])
+        elif 'bhp' in empresa_lower:
+            palabras.extend([
+                'bhp', 
+                'bhp billiton',
+                'billiton'
+            ])
+        
+        # Eliminar duplicados manteniendo orden
+        palabras_unicas = []
+        for palabra in palabras:
+            if palabra not in palabras_unicas and len(palabra) > 2:
+                palabras_unicas.append(palabra)
+        
+        return palabras_unicas
     
     def _calcular_score_relevancia(self, titular: str, nombre_proyecto: str, palabra_clave: str) -> float:
         """Calcula un score de relevancia para ordenar resultados"""
