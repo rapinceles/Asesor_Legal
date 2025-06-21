@@ -548,14 +548,18 @@
             const queryType = document.querySelector('input[name="query_type"]:checked').value;
             const companyName = document.getElementById('company-name').value.trim();
 
-            if (!query) {
-                showError('Por favor ingresa una consulta');
-                return;
-            }
-
-            if (queryType === 'proyecto' && !companyName) {
-                showError('Por favor ingresa el nombre de la empresa o proyecto para buscar en SEIA');
-                return;
+            // Validaciones específicas por tipo
+            if (queryType === 'legal') {
+                if (!query) {
+                    showError('Para consultas legales se requiere una pregunta específica');
+                    return;
+                }
+            } else if (queryType === 'proyecto') {
+                if (!companyName) {
+                    showError('Para búsqueda de proyectos se requiere nombre de empresa o proyecto');
+                    return;
+                }
+                // Para proyectos, la consulta es opcional
             }
 
             currentQuery = query;
@@ -607,10 +611,18 @@
                 return;
             }
 
+            // Determinar el título según el tipo de consulta
+            let titulo_respuesta = '📋 Respuesta Legal';
+            if (data.query_type === 'legal') {
+                titulo_respuesta = '⚖️ Normativa Legal Encontrada';
+            } else if (data.query_type === 'proyecto') {
+                titulo_respuesta = '🏗️ Información del Proyecto';
+            }
+
             let html = `
                 <div class="result-card">
                     <div class="card-title">
-                        📋 Respuesta Legal
+                        ${titulo_respuesta}
                     </div>
                     <div class="card-content">
                         ${formatResponse(data.respuesta)}

@@ -160,7 +160,27 @@ def generar_respuesta_legal_completa(query: str, query_type: str = "general", em
 - Reportes anuales a autoridad sanitaria"""
 
         else:
-            base_response = f"""**⚖️ ANÁLISIS LEGAL AMBIENTAL**
+            # Para consultas de proyectos, respuesta más específica
+            if query_type == "proyecto":
+                base_response = f"""**🏗️ INFORMACIÓN DEL PROYECTO**
+
+{query}
+
+**📊 ESTADO AMBIENTAL:**
+La información específica del proyecto se muestra en las secciones de empresa y ubicación a continuación.
+
+**🔍 ASPECTOS AMBIENTALES RELEVANTES:**
+• Verificar estado de la RCA (Resolución de Calificación Ambiental)
+• Revisar cumplimiento de condiciones ambientales
+• Monitorear reportes de seguimiento ambiental
+• Evaluar permisos ambientales sectoriales vigentes
+
+**⚖️ MARCO LEGAL APLICABLE:**
+• Ley 19.300 - Bases Generales del Medio Ambiente
+• Decreto Supremo 40/2012 - Reglamento del SEIA
+• Normativas sectoriales específicas según el tipo de proyecto"""
+            else:
+                base_response = f"""**⚖️ ANÁLISIS LEGAL AMBIENTAL**
 
 Su consulta sobre "{query}" se enmarca en la legislación ambiental chilena:
 
@@ -236,8 +256,8 @@ Se encontraron **{total} normas** relacionadas con su consulta "{query}":
 
 """
                 
-                # Agregar hasta 5 resultados principales
-                for i, norma in enumerate(resultados[:5], 1):
+                # Agregar hasta 10 resultados principales
+                for i, norma in enumerate(resultados[:10], 1):
                     titulo = norma.get('titulo', 'Sin título')
                     tipo_norma = norma.get('tipo_norma', 'Norma')
                     numero_ley = norma.get('numero_ley', '')
@@ -248,6 +268,18 @@ Se encontraron **{total} normas** relacionadas con su consulta "{query}":
 📋 **Título**: {titulo}
 🔗 **Enlace**: [Ver normativa completa]({enlace})
 ⭐ **Relevancia**: {relevancia:.1f}/5.0
+
+"""
+                
+                # Agregar enlace para ver más resultados si hay más de 10
+                if total > 10:
+                    respuesta += f"""**🔗 VER MÁS RESULTADOS:**
+
+Se encontraron **{total} normas** en total. Los primeros 10 resultados se muestran arriba.
+
+📋 **[Ver todos los {total} resultados en BCN →](https://www.bcn.cl/leychile/consulta/listado_n_sel?agr=2&q={query.replace(' ', '%20')})**
+
+---
 
 """
                 
