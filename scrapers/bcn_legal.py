@@ -174,21 +174,65 @@ class BCNScraper:
         
         # Base de datos de normativas comunes relacionadas con términos
         normativas_comunes = {
+            'residuos peligrosos': [
+                {'titulo': 'Decreto Supremo 148/2003 - Reglamento Sanitario sobre Manejo de Residuos Peligrosos', 'numero': '148', 'tipo': 'Decreto'},
+                {'titulo': 'Decreto Supremo 298/1994 - Reglamento de Transporte de Cargas Peligrosas por Calles y Caminos', 'numero': '298', 'tipo': 'Decreto'},
+                {'titulo': 'Decreto Supremo 78/2009 - Reglamento de Almacenamiento de Sustancias Peligrosas', 'numero': '78', 'tipo': 'Decreto'},
+                {'titulo': 'Ley 20.920/2016 - Marco para la Gestión de Residuos, la Responsabilidad Extendida del Productor y Fomento al Reciclaje', 'numero': '20.920', 'tipo': 'Ley'},
+                {'titulo': 'Decreto Supremo 1/2013 - Reglamento del Sistema de Evaluación de Impacto Ambiental', 'numero': '1', 'tipo': 'Decreto'},
+                {'titulo': 'NCh 382/2004 - Sustancias peligrosas - Clasificación general', 'numero': '382', 'tipo': 'Norma'},
+                {'titulo': 'Decreto Supremo 594/1999 - Reglamento sobre Condiciones Sanitarias y Ambientales Básicas en los Lugares de Trabajo', 'numero': '594', 'tipo': 'Decreto'},
+                {'titulo': 'Resolución 5081/1993 - Política de Residuos Sólidos', 'numero': '5081', 'tipo': 'Resolución'},
+                {'titulo': 'Decreto Supremo 725/1967 - Código Sanitario', 'numero': '725', 'tipo': 'Decreto'},
+                {'titulo': 'Ley 18.902/1989 - Crea la Superintendencia de Servicios Sanitarios', 'numero': '18.902', 'tipo': 'Ley'}
+            ],
+            'residuos': [
+                {'titulo': 'Ley 20.920/2016 - Marco para la Gestión de Residuos, la Responsabilidad Extendida del Productor y Fomento al Reciclaje', 'numero': '20.920', 'tipo': 'Ley'},
+                {'titulo': 'Decreto Supremo 148/2003 - Reglamento Sanitario sobre Manejo de Residuos Peligrosos', 'numero': '148', 'tipo': 'Decreto'},
+                {'titulo': 'Decreto Supremo 189/2005 - Reglamento sobre Condiciones Sanitarias y de Seguridad Básicas en los Rellenos Sanitarios', 'numero': '189', 'tipo': 'Decreto'},
+                {'titulo': 'Decreto Supremo 594/1999 - Reglamento sobre Condiciones Sanitarias y Ambientales Básicas en los Lugares de Trabajo', 'numero': '594', 'tipo': 'Decreto'},
+                {'titulo': 'Resolución 2444/2009 - Guía Metodológica para la Gestión de Residuos Sólidos Domiciliarios', 'numero': '2444', 'tipo': 'Resolución'},
+                {'titulo': 'Decreto Supremo 725/1967 - Código Sanitario', 'numero': '725', 'tipo': 'Decreto'},
+                {'titulo': 'Decreto Supremo 298/1994 - Reglamento de Transporte de Cargas Peligrosas por Calles y Caminos', 'numero': '298', 'tipo': 'Decreto'},
+                {'titulo': 'Ley 18.902/1989 - Crea la Superintendencia de Servicios Sanitarios', 'numero': '18.902', 'tipo': 'Ley'},
+                {'titulo': 'Decreto Supremo 78/2009 - Reglamento de Almacenamiento de Sustancias Peligrosas', 'numero': '78', 'tipo': 'Decreto'},
+                {'titulo': 'Resolución 5081/1993 - Política de Residuos Sólidos', 'numero': '5081', 'tipo': 'Resolución'}
+            ],
             'medio ambiente': [
-                {'titulo': 'Ley 19.300 - Ley sobre Bases Generales del Medio Ambiente', 'numero': '19.300', 'tipo': 'Ley'},
+                {'titulo': 'Ley 19.300/1994 - Ley sobre Bases Generales del Medio Ambiente', 'numero': '19.300', 'tipo': 'Ley'},
                 {'titulo': 'Decreto Supremo 40/2012 - Reglamento del Sistema de Evaluación de Impacto Ambiental', 'numero': '40', 'tipo': 'Decreto'},
-                {'titulo': 'Ley 20.417 - Crea el Ministerio, el Servicio de Evaluación Ambiental y la Superintendencia del Medio Ambiente', 'numero': '20.417', 'tipo': 'Ley'},
+                {'titulo': 'Ley 20.417/2010 - Crea el Ministerio, el Servicio de Evaluación Ambiental y la Superintendencia del Medio Ambiente', 'numero': '20.417', 'tipo': 'Ley'},
                 {'titulo': 'Decreto Supremo 95/2001 - Reglamento del Sistema de Evaluación de Impacto Ambiental', 'numero': '95', 'tipo': 'Decreto'},
+                {'titulo': 'Ley 20.920/2016 - Marco para la Gestión de Residuos, la Responsabilidad Extendida del Productor y Fomento al Reciclaje', 'numero': '20.920', 'tipo': 'Ley'},
+                {'titulo': 'Decreto Supremo 148/2003 - Reglamento Sanitario sobre Manejo de Residuos Peligrosos', 'numero': '148', 'tipo': 'Decreto'},
+                {'titulo': 'Decreto Supremo 594/1999 - Reglamento sobre Condiciones Sanitarias y Ambientales Básicas en los Lugares de Trabajo', 'numero': '594', 'tipo': 'Decreto'},
+                {'titulo': 'Ley 20.283/2008 - Sobre Recuperación del Bosque Nativo y Fomento Forestal', 'numero': '20.283', 'tipo': 'Ley'},
+                {'titulo': 'Decreto Supremo 298/1994 - Reglamento de Transporte de Cargas Peligrosas por Calles y Caminos', 'numero': '298', 'tipo': 'Decreto'},
+                {'titulo': 'Ley 18.902/1989 - Crea la Superintendencia de Servicios Sanitarios', 'numero': '18.902', 'tipo': 'Ley'}
             ],
             'agua': [
                 {'titulo': 'DFL 1122/1981 - Código de Aguas', 'numero': '1122', 'tipo': 'Decreto'},
-                {'titulo': 'Ley 21.064 - Introduce modificaciones al marco normativo que rige las aguas', 'numero': '21.064', 'tipo': 'Ley'},
+                {'titulo': 'Ley 21.064/2018 - Introduce modificaciones al marco normativo que rige las aguas', 'numero': '21.064', 'tipo': 'Ley'},
                 {'titulo': 'DFL 725/1967 - Código Sanitario', 'numero': '725', 'tipo': 'Decreto'},
+                {'titulo': 'Decreto Supremo 867/1978 - Reglamento de la Ley de Servicios Sanitarios', 'numero': '867', 'tipo': 'Decreto'},
+                {'titulo': 'Ley 18.902/1989 - Crea la Superintendencia de Servicios Sanitarios', 'numero': '18.902', 'tipo': 'Ley'},
+                {'titulo': 'Decreto Supremo 594/1999 - Reglamento sobre Condiciones Sanitarias y Ambientales Básicas en los Lugares de Trabajo', 'numero': '594', 'tipo': 'Decreto'},
+                {'titulo': 'Decreto Supremo 46/2002 - Norma de Emisión de Residuos Líquidos a Aguas Subterráneas', 'numero': '46', 'tipo': 'Decreto'},
+                {'titulo': 'Decreto Supremo 90/2000 - Norma de Emisión para la Regulación de Contaminantes Asociados a las Descargas de Residuos Líquidos a Aguas Marinas y Continentales Superficiales', 'numero': '90', 'tipo': 'Decreto'},
+                {'titulo': 'Ley 20.017/2005 - Modifica el Código de Aguas', 'numero': '20.017', 'tipo': 'Ley'},
+                {'titulo': 'Decreto Supremo 609/1998 - Norma de Calidad Primaria para las Aguas Continentales Superficiales Aptas para Actividades de Recreación con Contacto Directo', 'numero': '609', 'tipo': 'Decreto'}
             ],
             'minería': [
-                {'titulo': 'Ley 18.248 - Código de Minería', 'numero': '18.248', 'tipo': 'Ley'},
-                {'titulo': 'Ley 18.097 - Ley Orgánica Constitucional sobre Concesiones Mineras', 'numero': '18.097', 'tipo': 'Ley'},
+                {'titulo': 'Ley 18.248/1983 - Código de Minería', 'numero': '18.248', 'tipo': 'Ley'},
+                {'titulo': 'Ley 18.097/1982 - Ley Orgánica Constitucional sobre Concesiones Mineras', 'numero': '18.097', 'tipo': 'Ley'},
                 {'titulo': 'Decreto Supremo 132/2004 - Reglamento de Seguridad Minera', 'numero': '132', 'tipo': 'Decreto'},
+                {'titulo': 'Decreto Supremo 72/1985 - Reglamento de Seguridad Minera', 'numero': '72', 'tipo': 'Decreto'},
+                {'titulo': 'Ley 16.319/1965 - Crea la Comisión Chilena del Cobre', 'numero': '16.319', 'tipo': 'Ley'},
+                {'titulo': 'Decreto Supremo 148/2003 - Reglamento Sanitario sobre Manejo de Residuos Peligrosos', 'numero': '148', 'tipo': 'Decreto'},
+                {'titulo': 'Decreto Supremo 594/1999 - Reglamento sobre Condiciones Sanitarias y Ambientales Básicas en los Lugares de Trabajo', 'numero': '594', 'tipo': 'Decreto'},
+                {'titulo': 'Ley 20.551/2011 - Regula el Cierre de Faenas e Instalaciones Mineras', 'numero': '20.551', 'tipo': 'Ley'},
+                {'titulo': 'Decreto Supremo 298/1994 - Reglamento de Transporte de Cargas Peligrosas por Calles y Caminos', 'numero': '298', 'tipo': 'Decreto'},
+                {'titulo': 'Ley 19.300/1994 - Ley sobre Bases Generales del Medio Ambiente', 'numero': '19.300', 'tipo': 'Ley'}
             ]
         }
         
