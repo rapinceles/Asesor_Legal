@@ -307,6 +307,30 @@ async def consulta_completa(request: Request):
             empresa_info = procesar_informacion_empresa(company_name, query_type)
             if empresa_info:
                 logger.info("✅ Información de empresa obtenida")
+                
+                # Verificar si requiere selección de proyecto
+                if empresa_info.get('requiere_seleccion'):
+                    lista_proyectos = empresa_info.get('lista_proyectos', [])
+                    return JSONResponse({
+                        "success": True,
+                        "requiere_seleccion": True,
+                        "empresa_buscada": company_name,
+                        "proyectos_encontrados": len(lista_proyectos),
+                        "lista_proyectos": [{
+                            "id": p.get('id_proyecto'),
+                            "nombre": p.get('nombre', 'Sin nombre'),
+                            "titular": p.get('titular', 'Sin titular'),
+                            "region": p.get('region', 'Sin región'),
+                            "estado": p.get('estado', 'Sin estado'),
+                            "tipo": p.get('tipo', 'Sin tipo'),
+                            "inversion": p.get('inversion', 'No especificada'),
+                            "score": p.get('score_relevancia', 0)
+                        } for p in lista_proyectos],
+                        "mensaje": f"Se encontraron {len(lista_proyectos)} proyectos para '{company_name}'. Selecciona el proyecto específico:",
+                        "stats": empresa_info.get('stats', {}),
+                        "timestamp": datetime.now().isoformat()
+                    })
+                    
             else:
                 logger.warning("⚠️ No se pudo obtener información de empresa")
         
@@ -379,6 +403,151 @@ async def consulta_completa(request: Request):
         raise
     except Exception as e:
         logger.error(f"Error crítico en consulta_completa: {str(e)}")
+        return JSONResponse({
+            "success": False,
+            "error": f"Error interno del servidor: {str(e)[:200]}",
+            "timestamp": datetime.now().isoformat()
+        }, status_code=500)
+
+@app.post("/seleccionar_proyecto")
+async def seleccionar_proyecto(request: Request):
+    """Endpoint para seleccionar un proyecto específico de la lista"""
+    try:
+        # Obtener datos de la petición
+        try:
+            data = await request.json()
+        except Exception as e:
+            logger.error(f"Error al parsear JSON: {e}")
+            raise HTTPException(status_code=400, detail="Formato de datos inválido")
+        
+        # Extraer y validar parámetros
+        empresa_nombre = str(data.get("empresa_nombre", "")).strip()
+        proyecto_id = data.get("proyecto_id")
+        query = str(data.get("query", "")).strip()
+        query_type = str(data.get("query_type", "proyecto")).strip()
+        
+        # Validaciones
+        if not empresa_nombre:
+            raise HTTPException(status_code=400, detail="Se requiere nombre de empresa")
+        
+        if proyecto_id is None:
+            raise HTTPException(status_code=400, detail="Se requiere ID de proyecto")
+        
+        try:
+            proyecto_id = int(proyecto_id)
+        except (ValueError, TypeError):
+            raise HTTPException(status_code=400, detail="ID de proyecto debe ser un número")
+        
+        logger.info(f"Seleccionando proyecto {proyecto_id} para empresa: {empresa_nombre}")
+        
+        # Obtener proyecto específico
+        try:
+            from scrapers.seia_titular import obtener_proyecto_seleccionado
+            resultado = obtener_proyecto_seleccionado(empresa_nombre, proyecto_id)
+            
+            if not resultado.get('success'):
+                raise HTTPException(status_code=404, detail=f"No se encontró el proyecto: {resultado.get('error', 'Error desconocido')}")
+            
+            proyecto_data = resultado.get('data', {})
+            
+        except ImportError:
+            raise HTTPException(status_code=500, detail="Scraper por titular no disponible")
+        except Exception as e:
+            logger.error(f"Error al obtener proyecto seleccionado: {e}")
+            raise HTTPException(status_code=500, detail=f"Error al obtener proyecto: {str(e)}")
+        
+        # Estructurar información de empresa
+        empresa_info = {
+            'success': True,
+            'data': {
+                'codigo_expediente': proyecto_data.get('link_expediente', '').split('=')[-1] if proyecto_data.get('link_expediente') else 'N/A',
+                'nombre': proyecto_data.get('nombre', ''),
+                'estado': proyecto_data.get('estado', ''),
+                'region': proyecto_data.get('region', ''),
+                'tipo': proyecto_data.get('tipo', ''),
+                'fecha_presentacion': proyecto_data.get('fecha', ''),
+                'inversion': proyecto_data.get('inversion', ''),
+                'link_expediente': proyecto_data.get('link_expediente', ''),
+                'titular': {
+                    'nombre': proyecto_data.get('titular', empresa_nombre),
+                    'nombre_fantasia': proyecto_data.get('titular', empresa_nombre),
+                    'razon_social': proyecto_data.get('razon_social_completa', ''),
+                    'rut': proyecto_data.get('rut', ''),
+                    'direccion': proyecto_data.get('direccion_titular', ''),
+                    'telefono': proyecto_data.get('telefono', ''),
+                    'email': proyecto_data.get('email', '')
+                },
+                'ubicacion': {
+                    'region': proyecto_data.get('region', ''),
+                    'ubicacion_proyecto': proyecto_data.get('ubicacion_detallada', proyecto_data.get('region', '')),
+                    'comuna': proyecto_data.get('comuna', ''),
+                    'provincia': proyecto_data.get('provincia', ''),
+                    'coordenadas': ''
+                }
+            },
+            'modo': 'titular_seleccionado'
+        }
+        
+        # Generar respuesta legal
+        respuesta = generar_respuesta_legal_completa(query or f"Información del proyecto {proyecto_data.get('nombre', 'seleccionado')}", query_type, empresa_info)
+        
+        # Preparar respuesta
+        response_data = {
+            "success": True,
+            "respuesta": respuesta,
+            "query_type": query_type,
+            "proyecto_seleccionado": True,
+            "timestamp": datetime.now().isoformat(),
+            "referencias": [
+                {
+                    "title": "Sistema de Evaluación de Impacto Ambiental (SEIA)",
+                    "description": "Portal oficial del SEIA - Información de proyectos ambientales",
+                    "url": "https://seia.sea.gob.cl/"
+                },
+                {
+                    "title": "Expediente SEIA del Proyecto",
+                    "description": f"Información detallada del proyecto: {proyecto_data.get('nombre', 'N/A')}",
+                    "url": proyecto_data.get('link_expediente', 'https://seia.sea.gob.cl/')
+                }
+            ]
+        }
+        
+        # Agregar información de empresa
+        data_empresa = empresa_info['data']
+        titular = data_empresa.get('titular', {})
+        
+        response_data["empresa_info"] = {
+            "nombre": titular.get('nombre', empresa_nombre),
+            "nombre_fantasia": titular.get('nombre_fantasia', ''),
+            "razon_social": titular.get('razon_social', ''),
+            "rut": titular.get('rut', ''),
+            "direccion": titular.get('direccion', ''),
+            "telefono": titular.get('telefono', ''),
+            "email": titular.get('email', ''),
+            "region": data_empresa.get('ubicacion', {}).get('region', ''),
+            "codigo_expediente": data_empresa.get('codigo_expediente', ''),
+            "estado_proyecto": data_empresa.get('estado', ''),
+            "link_seia": data_empresa.get('link_expediente', ''),
+            "tipo": query_type,
+            "fuente": "SEIA (proyecto seleccionado)",
+            "proyecto_nombre": proyecto_data.get('nombre', ''),
+            "proyecto_id": proyecto_id
+        }
+        
+        # Agregar información de ubicación para Google Maps
+        ubicacion_info = extraer_informacion_ubicacion(empresa_info)
+        if ubicacion_info:
+            response_data["ubicacion"] = ubicacion_info
+            logger.info("✅ Información de ubicación incluida")
+        
+        logger.info(f"✅ Proyecto {proyecto_id} seleccionado exitosamente")
+        
+        return JSONResponse(response_data)
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error crítico en seleccionar_proyecto: {str(e)}")
         return JSONResponse({
             "success": False,
             "error": f"Error interno del servidor: {str(e)[:200]}",

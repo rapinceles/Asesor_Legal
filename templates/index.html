@@ -605,6 +605,12 @@
         function displayResults(data) {
             const resultsContent = document.getElementById('results-content');
             
+            // Verificar si requiere selección de proyecto
+            if (data.requiere_seleccion && data.lista_proyectos) {
+                displayProjectSelection(data);
+                return;
+            }
+            
             if (!data || !data.respuesta) {
                 showError('No se recibió una respuesta válida del servidor');
                 return;
@@ -794,6 +800,133 @@
                     </a>
                 </div>
             `).join('');
+        }
+
+        function displayProjectSelection(data) {
+            const resultsContent = document.getElementById('results-content');
+            
+            let html = `
+                <div class="result-card">
+                    <div class="card-title">
+                        🔍 Proyectos Encontrados para "${data.empresa_buscada}"
+                    </div>
+                    <div class="card-content">
+                        <p style="margin-bottom: 20px; color: #b0b0b0;">
+                            ${data.mensaje}
+                        </p>
+                        
+                        <div style="margin-bottom: 20px; padding: 15px; background: rgba(255, 107, 53, 0.1); border-radius: 8px;">
+                            <p style="margin: 0; font-size: 0.9rem;">
+                                📊 <strong>Estadísticas de búsqueda:</strong><br>
+                                • Proyectos encontrados: ${data.proyectos_encontrados}<br>
+                                • Empresa buscada: ${data.empresa_buscada}
+                                ${data.stats && data.stats.variaciones_usadas ? 
+                                    `<br>• Variaciones probadas: ${data.stats.variaciones_usadas.slice(0, 3).join(', ')}` : ''
+                                }
+                            </p>
+                        </div>
+                        
+                        <div class="projects-list">
+                            ${formatProjectsList(data.lista_proyectos, data.empresa_buscada)}
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            resultsContent.innerHTML = html;
+        }
+
+        function formatProjectsList(projects, empresaBuscada) {
+            return projects.map((project, index) => `
+                <div class="project-item" style="
+                    margin-bottom: 15px; 
+                    padding: 20px; 
+                    background: rgba(255, 255, 255, 0.05); 
+                    border-radius: 12px; 
+                    border: 1px solid rgba(255, 107, 53, 0.2);
+                    transition: all 0.3s ease;
+                    cursor: pointer;
+                " onmouseover="this.style.background='rgba(255, 107, 53, 0.1)'; this.style.borderColor='rgba(255, 107, 53, 0.4)'" 
+                   onmouseout="this.style.background='rgba(255, 255, 255, 0.05)'; this.style.borderColor='rgba(255, 107, 53, 0.2)'"
+                   onclick="seleccionarProyecto(${project.id}, '${empresaBuscada}')">
+                   
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
+                        <h4 style="margin: 0; color: #ff6b35; font-size: 1.1rem;">
+                            ${index + 1}. ${project.nombre}
+                        </h4>
+                        <span style="
+                            background: linear-gradient(45deg, #ff6b35, #ff8c42); 
+                            color: white; 
+                            padding: 4px 8px; 
+                            border-radius: 15px; 
+                            font-size: 0.8rem; 
+                            font-weight: bold;
+                        ">
+                            Score: ${project.score.toFixed(1)}
+                        </span>
+                    </div>
+                    
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; font-size: 0.9rem;">
+                        <p style="margin: 5px 0;"><strong>🏢 Titular:</strong> ${project.titular}</p>
+                        <p style="margin: 5px 0;"><strong>📍 Región:</strong> ${project.region}</p>
+                        <p style="margin: 5px 0;"><strong>📊 Estado:</strong> ${project.estado}</p>
+                        <p style="margin: 5px 0;"><strong>🏗️ Tipo:</strong> ${project.tipo}</p>
+                        ${project.inversion !== 'No especificada' ? 
+                            `<p style="margin: 5px 0;"><strong>💰 Inversión:</strong> ${project.inversion}</p>` : ''
+                        }
+                    </div>
+                    
+                    <div style="margin-top: 15px; text-align: center;">
+                        <button style="
+                            background: linear-gradient(45deg, #ff6b35, #ff8c42);
+                            color: white;
+                            border: none;
+                            padding: 10px 20px;
+                            border-radius: 25px;
+                            font-weight: bold;
+                            cursor: pointer;
+                            transition: all 0.3s ease;
+                        " onmouseover="this.style.transform='scale(1.05)'" 
+                           onmouseout="this.style.transform='scale(1)'"
+                           onclick="event.stopPropagation(); seleccionarProyecto(${project.id}, '${empresaBuscada}')">
+                            Seleccionar este proyecto →
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        async function seleccionarProyecto(proyectoId, empresaNombre) {
+            showLoading(true);
+            hideError();
+            
+            try {
+                const response = await fetch('/seleccionar_proyecto', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        empresa_nombre: empresaNombre,
+                        proyecto_id: proyectoId,
+                        query: currentQuery,
+                        query_type: currentQueryType
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Error ${response.status}: ${response.statusText}`);
+                }
+
+                const data = await response.json();
+                displayResults(data);
+
+            } catch (error) {
+                console.error('Error al seleccionar proyecto:', error);
+                showError('Error al seleccionar el proyecto: ' + error.message);
+            } finally {
+                showLoading(false);
+            }
         }
 
         function showLoading(show) {

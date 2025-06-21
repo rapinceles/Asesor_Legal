@@ -23,7 +23,113 @@ def obtener_informacion_proyecto_seia_safe(nombre_empresa: str) -> Dict:
             }
         
         # Intentar diferentes métodos de scraping
-        # Método 1: Scraper real (nuevo)
+        # Método 1: Scraper por titular (NUEVO - búsqueda específica por titular)
+        try:
+            from scrapers.seia_titular import buscar_proyectos_por_titular
+            result = buscar_proyectos_por_titular(nombre_empresa)
+            if result and result.get('success'):
+                logger.info("✅ Información obtenida con scraper POR TITULAR")
+                # Adaptar formato para compatibilidad con el sistema
+                if result.get('data'):
+                    data = result['data']
+                    proyecto_principal = data.get('proyecto_principal', {})
+                    lista_proyectos = data.get('lista_proyectos', [])
+                    
+                    # Estructurar datos del proyecto principal para compatibilidad
+                    formatted_data = {
+                        'codigo_expediente': proyecto_principal.get('link_expediente', '').split('=')[-1] if proyecto_principal.get('link_expediente') else 'N/A',
+                        'nombre': proyecto_principal.get('nombre', ''),
+                        'estado': proyecto_principal.get('estado', ''),
+                        'region': proyecto_principal.get('region', ''),
+                        'tipo': proyecto_principal.get('tipo', ''),
+                        'fecha_presentacion': proyecto_principal.get('fecha', ''),
+                        'inversion': proyecto_principal.get('inversion', ''),
+                        'link_expediente': proyecto_principal.get('link_expediente', ''),
+                        'titular': {
+                            'nombre': proyecto_principal.get('titular', nombre_empresa),
+                            'nombre_fantasia': proyecto_principal.get('titular', nombre_empresa),
+                            'razon_social': proyecto_principal.get('razon_social_completa', ''),
+                            'rut': proyecto_principal.get('rut', ''),
+                            'direccion': proyecto_principal.get('direccion_titular', ''),
+                            'telefono': proyecto_principal.get('telefono', ''),
+                            'email': proyecto_principal.get('email', '')
+                        },
+                        'ubicacion': {
+                            'region': proyecto_principal.get('region', ''),
+                            'ubicacion_proyecto': proyecto_principal.get('ubicacion_detallada', proyecto_principal.get('region', '')),
+                            'comuna': proyecto_principal.get('comuna', ''),
+                            'provincia': proyecto_principal.get('provincia', ''),
+                            'coordenadas': ''
+                        }
+                    }
+                    
+                    return {
+                        'success': True,
+                        'data': formatted_data,
+                        'modo': 'titular',
+                        'lista_proyectos': lista_proyectos,  # Lista completa para selección
+                        'stats': {
+                            'titular_buscado': data.get('titular_buscado', nombre_empresa),
+                            'proyectos_encontrados': data.get('proyectos_encontrados', 0),
+                            'total_encontrados': result.get('total_encontrados', 0),
+                            'variaciones_usadas': result.get('variaciones_usadas', [])
+                        }
+                    }
+                return result
+        except Exception as e:
+            logger.warning(f"Scraper por titular falló: {e}")
+        
+        # Método 2: Scraper corregido (anterior)
+        try:
+            from scrapers.seia_correcto import obtener_informacion_empresa_seia_correcto
+            result = obtener_informacion_empresa_seia_correcto(nombre_empresa)
+            if result and result.get('success'):
+                logger.info("✅ Información obtenida con scraper CORREGIDO")
+                # Adaptar formato para compatibilidad
+                if result.get('data'):
+                    data = result['data']
+                    # Estructurar datos para compatibilidad con el sistema
+                    formatted_data = {
+                        'codigo_expediente': data.get('link_expediente', '').split('=')[-1] if data.get('link_expediente') else 'N/A',
+                        'nombre': data.get('nombre', ''),
+                        'estado': data.get('estado', ''),
+                        'region': data.get('region', ''),
+                        'tipo': data.get('tipo', ''),
+                        'fecha_presentacion': data.get('fecha', ''),
+                        'inversion': data.get('inversion', ''),
+                        'link_expediente': data.get('link_expediente', ''),
+                        'titular': {
+                            'nombre': data.get('titular', nombre_empresa),
+                            'nombre_fantasia': data.get('titular', nombre_empresa),
+                            'razon_social': data.get('titular_detallado', {}).get('razon_social', ''),
+                            'rut': data.get('titular_detallado', {}).get('rut', ''),
+                            'direccion': data.get('titular_detallado', {}).get('direccion', ''),
+                            'telefono': data.get('titular_detallado', {}).get('telefono', ''),
+                            'email': data.get('titular_detallado', {}).get('email', '')
+                        },
+                        'ubicacion': {
+                            'region': data.get('region', ''),
+                            'ubicacion_proyecto': data.get('ubicacion_detallada', {}).get('ubicacion_proyecto', data.get('region', '')),
+                            'comuna': data.get('ubicacion_detallada', {}).get('comuna', ''),
+                            'provincia': data.get('ubicacion_detallada', {}).get('provincia', ''),
+                            'coordenadas': ''
+                        }
+                    }
+                    return {
+                        'success': True,
+                        'data': formatted_data,
+                        'modo': 'correcto',
+                        'stats': {
+                            'total_encontrados': result.get('total_encontrados', 0),
+                            'proyectos_extraidos': result.get('proyectos_extraidos', 0),
+                            'proyectos_filtrados': result.get('proyectos_filtrados', 0)
+                        }
+                    }
+                return result
+        except Exception as e:
+            logger.warning(f"Scraper corregido falló: {e}")
+        
+        # Método 2: Scraper real (anterior)
         try:
             from scrapers.seia_real import obtener_informacion_proyecto_seia_real
             result = obtener_informacion_proyecto_seia_real(nombre_empresa)
@@ -33,7 +139,7 @@ def obtener_informacion_proyecto_seia_safe(nombre_empresa: str) -> Dict:
         except Exception as e:
             logger.warning(f"Scraper real falló: {e}")
         
-        # Método 2: Scraper completo
+        # Método 3: Scraper completo
         try:
             from scrapers.seia_project_detail_scraper import obtener_informacion_proyecto_seia
             result = obtener_informacion_proyecto_seia(nombre_empresa)
@@ -43,7 +149,7 @@ def obtener_informacion_proyecto_seia_safe(nombre_empresa: str) -> Dict:
         except Exception as e:
             logger.warning(f"Scraper completo falló: {e}")
         
-        # Método 3: Scraper simple
+        # Método 4: Scraper simple
         try:
             from scrapers.seia_simple import obtener_informacion_proyecto_seia_simple
             result = obtener_informacion_proyecto_seia_simple(nombre_empresa)
@@ -53,7 +159,7 @@ def obtener_informacion_proyecto_seia_safe(nombre_empresa: str) -> Dict:
         except Exception as e:
             logger.warning(f"Scraper simple falló: {e}")
         
-        # Método 4: Búsqueda directa básica
+        # Método 5: Búsqueda directa básica
         logger.info("Intentando búsqueda directa básica")
         try:
             import requests
@@ -189,7 +295,7 @@ def obtener_informacion_proyecto_seia_safe(nombre_empresa: str) -> Dict:
         except Exception as e:
             logger.error(f"Error en búsqueda directa: {e}")
         
-        # Método 5: Respuesta de error final
+        # Método 6: Respuesta de error final
         logger.error("Todos los métodos fallaron")
         return {
             'success': False,
