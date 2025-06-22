@@ -58,12 +58,18 @@ def importar_scraper_titular():
 def importar_scraper_bcn():
     """Importar scraper BCN de forma segura"""
     try:
-        from scrapers.bcn_legal import buscar_normativa_bcn
-        logger.info("✅ Scraper BCN importado correctamente")
-        return buscar_normativa_bcn
+        from scrapers.bcn_preciso import obtener_normativa_bcn_precisa
+        logger.info("✅ Scraper BCN PRECISO importado correctamente")
+        return obtener_normativa_bcn_precisa
     except Exception as e:
-        logger.warning(f"⚠️ No se pudo importar scraper BCN: {e}")
-        return None
+        logger.warning(f"⚠️ No se pudo importar scraper BCN preciso: {e}")
+        try:
+            from scrapers.bcn_legal import buscar_normativa_bcn
+            logger.info("✅ Scraper BCN original importado como fallback")
+            return buscar_normativa_bcn
+        except Exception as e2:
+            logger.warning(f"⚠️ No se pudo importar scraper BCN original: {e2}")
+            return None
 
 # Función de scraper SEIA fallback
 def obtener_informacion_seia_fallback(nombre_empresa: str) -> Dict:
