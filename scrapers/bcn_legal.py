@@ -305,47 +305,152 @@ class BCNScraper:
                 {'titulo': 'Decreto Supremo 40/1969 - Reglamento sobre Prevención de Riesgos Profesionales', 'numero': '40', 'tipo': 'Decreto'},
                 {'titulo': 'Ley 21.220/2020 - Modifica el Código del Trabajo en Materia de Trabajo a Distancia', 'numero': '21.220', 'tipo': 'Ley'},
                 {'titulo': 'Decreto Supremo 67/1999 - Reglamento para la Aplicación de la Ley N° 16.744', 'numero': '67', 'tipo': 'Decreto'}
+            ],
+            'suelo': [
+                {'titulo': 'Decreto Supremo 82/2010 - Reglamento de Suelos, Aguas y Humedales', 'numero': '82', 'tipo': 'Decreto'},
+                {'titulo': 'DFL 458/1975 - Ley General de Urbanismo y Construcciones', 'numero': '458', 'tipo': 'DFL'},
+                {'titulo': 'Decreto Supremo 47/1992 - Ordenanza General de Urbanismo y Construcciones', 'numero': '47', 'tipo': 'Decreto'},
+                {'titulo': 'Ley 18.755/1989 - Establece Normas sobre el Servicio Agrícola y Ganadero', 'numero': '18.755', 'tipo': 'Ley'},
+                {'titulo': 'Decreto Supremo 594/1999 - Reglamento sobre Condiciones Sanitarias y Ambientales Básicas en los Lugares de Trabajo', 'numero': '594', 'tipo': 'Decreto'},
+                {'titulo': 'Ley 19.300/1994 - Ley sobre Bases Generales del Medio Ambiente', 'numero': '19.300', 'tipo': 'Ley'},
+                {'titulo': 'Decreto Supremo 40/2012 - Reglamento del Sistema de Evaluación de Impacto Ambiental', 'numero': '40', 'tipo': 'Decreto'},
+                {'titulo': 'Decreto Supremo 46/2002 - Norma de Emisión de Residuos Líquidos a Aguas Subterráneas', 'numero': '46', 'tipo': 'Decreto'},
+                {'titulo': 'Ley 20.283/2008 - Sobre Recuperación del Bosque Nativo y Fomento Forestal', 'numero': '20.283', 'tipo': 'Ley'},
+                {'titulo': 'Decreto Supremo 725/1967 - Código Sanitario', 'numero': '725', 'tipo': 'Decreto'}
+            ],
+            'hidrocarburos': [
+                {'titulo': 'Ley 9.618/1950 - Crea la Empresa Nacional del Petróleo', 'numero': '9.618', 'tipo': 'Ley'},
+                {'titulo': 'Decreto Supremo 90/2000 - Norma de Emisión para la Regulación de Contaminantes', 'numero': '90', 'tipo': 'Decreto'},
+                {'titulo': 'Decreto Supremo 298/1994 - Reglamento de Transporte de Cargas Peligrosas', 'numero': '298', 'tipo': 'Decreto'},
+                {'titulo': 'Decreto Supremo 78/2009 - Reglamento de Almacenamiento de Sustancias Peligrosas', 'numero': '78', 'tipo': 'Decreto'},
+                {'titulo': 'Ley 19.300/1994 - Ley sobre Bases Generales del Medio Ambiente', 'numero': '19.300', 'tipo': 'Ley'},
+                {'titulo': 'Decreto Supremo 594/1999 - Reglamento sobre Condiciones Sanitarias y Ambientales Básicas', 'numero': '594', 'tipo': 'Decreto'},
+                {'titulo': 'Decreto Supremo 725/1967 - Código Sanitario', 'numero': '725', 'tipo': 'Decreto'},
+                {'titulo': 'Ley 18.916/1990 - Código Aeronáutico', 'numero': '18.916', 'tipo': 'Ley'},
+                {'titulo': 'Decreto Supremo 148/2003 - Reglamento Sanitario sobre Manejo de Residuos Peligrosos', 'numero': '148', 'tipo': 'Decreto'},
+                {'titulo': 'DFL 1/2007 - Ley de Tránsito', 'numero': '1', 'tipo': 'DFL'}
+            ],
+            'contaminacion': [
+                {'titulo': 'Ley 19.300/1994 - Ley sobre Bases Generales del Medio Ambiente', 'numero': '19.300', 'tipo': 'Ley'},
+                {'titulo': 'Decreto Supremo 40/2012 - Reglamento del Sistema de Evaluación de Impacto Ambiental', 'numero': '40', 'tipo': 'Decreto'},
+                {'titulo': 'Decreto Supremo 90/2000 - Norma de Emisión para la Regulación de Contaminantes', 'numero': '90', 'tipo': 'Decreto'},
+                {'titulo': 'Decreto Supremo 46/2002 - Norma de Emisión de Residuos Líquidos a Aguas Subterráneas', 'numero': '46', 'tipo': 'Decreto'},
+                {'titulo': 'Decreto Supremo 148/2003 - Reglamento Sanitario sobre Manejo de Residuos Peligrosos', 'numero': '148', 'tipo': 'Decreto'},
+                {'titulo': 'Ley 20.417/2010 - Crea el Ministerio, el Servicio de Evaluación Ambiental y la Superintendencia del Medio Ambiente', 'numero': '20.417', 'tipo': 'Ley'},
+                {'titulo': 'Decreto Supremo 594/1999 - Reglamento sobre Condiciones Sanitarias y Ambientales Básicas', 'numero': '594', 'tipo': 'Decreto'},
+                {'titulo': 'Decreto Supremo 725/1967 - Código Sanitario', 'numero': '725', 'tipo': 'Decreto'},
+                {'titulo': 'Ley 20.920/2016 - Marco para la Gestión de Residuos', 'numero': '20.920', 'tipo': 'Ley'},
+                {'titulo': 'Decreto Supremo 298/1994 - Reglamento de Transporte de Cargas Peligrosas', 'numero': '298', 'tipo': 'Decreto'}
             ]
         }
         
         resultados = []
         
-        # Buscar normativas relacionadas con coincidencias flexibles
-        terminos_busqueda = termino_lower.split()
+        # ALGORITMO MEJORADO: Mapeo inteligente de términos
+        logger.info(f"🔍 Analizando término: '{termino}' -> '{termino_lower}'")
         
-        for categoria, normativas in normativas_comunes.items():
-            # Buscar coincidencias más flexibles
-            coincidencias = 0
-            palabras_categoria = categoria.split()
+        # Diccionario de sinónimos y términos relacionados
+        sinonimos = {
+            'suelo': ['suelo', 'terreno', 'tierra', 'uso de suelo', 'urbanismo', 'construccion'],
+            'agua': ['agua', 'hidrico', 'acuifero', 'riego', 'sanitario', 'liquido'],
+            'residuos': ['residuo', 'basura', 'desecho', 'desperdicio', 'reciclaje'],
+            'residuos peligrosos': ['residuo peligroso', 'sustancia peligrosa', 'toxico', 'quimico'],
+            'energia': ['energia', 'electrico', 'renovable', 'solar', 'eolico', 'generacion'],
+            'mineria': ['mineria', 'minero', 'extraccion', 'yacimiento', 'cobre', 'oro'],
+            'forestal': ['forestal', 'bosque', 'arbol', 'madera', 'silvicultura'],
+            'pesca': ['pesca', 'pesquero', 'acuicultura', 'maritimo', 'mar'],
+            'construccion': ['construccion', 'edificacion', 'urbanismo', 'vivienda', 'inmobiliario'],
+            'transporte': ['transporte', 'vehiculo', 'transito', 'carretera', 'camino'],
+            'laboral': ['laboral', 'trabajo', 'trabajador', 'empleo', 'ocupacional'],
+            'medio ambiente': ['ambiental', 'medio ambiente', 'ecologico', 'natural', 'conservacion'],
+            'contaminacion': ['contaminacion', 'contaminante', 'polucion', 'emision'],
+            'hidrocarburos': ['hidrocarburo', 'petroleo', 'combustible', 'gasolina', 'diesel']
+        }
+        
+        # Buscar la categoría más relevante
+        categoria_encontrada = None
+        max_coincidencias = 0
+        
+        for categoria, lista_sinonimos in sinonimos.items():
+            coincidencias_categoria = 0
             
-            # Verificar coincidencias palabra por palabra
-            for palabra_termino in terminos_busqueda:
-                for palabra_categoria in palabras_categoria:
-                    if (palabra_termino in palabra_categoria or 
-                        palabra_categoria in palabra_termino or
-                        palabra_termino == palabra_categoria):
-                        coincidencias += 1
+            # Verificar si el término está en los sinónimos
+            for sinonimo in lista_sinonimos:
+                if sinonimo in termino_lower or termino_lower in sinonimo:
+                    coincidencias_categoria += 2  # Peso mayor para coincidencias directas
+                
+                # También verificar palabras individuales
+                palabras_termino = termino_lower.split()
+                palabras_sinonimo = sinonimo.split()
+                
+                for palabra_termino in palabras_termino:
+                    for palabra_sinonimo in palabras_sinonimo:
+                        if (len(palabra_termino) > 2 and 
+                            (palabra_termino in palabra_sinonimo or palabra_sinonimo in palabra_termino)):
+                            coincidencias_categoria += 1
             
-            # También buscar en títulos de normativas
-            for normativa in normativas:
-                titulo_lower = normativa['titulo'].lower()
+            if coincidencias_categoria > max_coincidencias:
+                max_coincidencias = coincidencias_categoria
+                categoria_encontrada = categoria
+        
+        logger.info(f"✅ Categoría encontrada: '{categoria_encontrada}' con {max_coincidencias} coincidencias")
+        
+        # Si encontramos una categoría específica, usar esas normativas
+        if categoria_encontrada and categoria_encontrada in normativas_comunes:
+            normativas_categoria = normativas_comunes[categoria_encontrada]
+            logger.info(f"📋 Usando {len(normativas_categoria)} normativas de categoría '{categoria_encontrada}'")
+            
+            for i, normativa in enumerate(normativas_categoria, 1):
+                resultado = {
+                    'numero': i,
+                    'titulo': normativa['titulo'],
+                    'descripcion': f"Normativa específica de {categoria_encontrada}",
+                    'enlace': f"https://www.bcn.cl/leychile/navegar?idNorma={normativa['numero']}",
+                    'numero_ley': normativa['numero'],
+                    'tipo_norma': normativa['tipo'],
+                    'relevancia': 5.0 - (0.1 * i)  # Relevancia alta para categoría específica
+                }
+                resultados.append(resultado)
+        
+        # Si no hay categoría específica, buscar en todas las categorías
+        else:
+            logger.info("🔄 No hay categoría específica, buscando en todas las categorías...")
+            terminos_busqueda = termino_lower.split()
+            
+            for categoria, normativas in normativas_comunes.items():
+                # Buscar coincidencias más flexibles
+                coincidencias = 0
+                palabras_categoria = categoria.split()
+                
+                # Verificar coincidencias palabra por palabra
                 for palabra_termino in terminos_busqueda:
-                    if palabra_termino in titulo_lower:
-                        coincidencias += 1
-            
-            # Si hay coincidencias, agregar las normativas
-            if coincidencias > 0:
-                for i, normativa in enumerate(normativas, 1):
-                    resultado = {
-                        'numero': len(resultados) + 1,
-                        'titulo': normativa['titulo'],
-                        'descripcion': f"Normativa relacionada con {categoria} - {coincidencias} coincidencias",
-                        'enlace': f"https://www.bcn.cl/leychile/navegar?idNorma={normativa['numero']}",
-                        'numero_ley': normativa['numero'],
-                        'tipo_norma': normativa['tipo'],
-                        'relevancia': 4.0 + (0.1 * coincidencias) + (0.05 * i)  # Score basado en coincidencias
-                    }
-                    resultados.append(resultado)
+                    for palabra_categoria in palabras_categoria:
+                        if (len(palabra_termino) > 2 and
+                            (palabra_termino in palabra_categoria or 
+                             palabra_categoria in palabra_termino or
+                             palabra_termino == palabra_categoria)):
+                            coincidencias += 1
+                
+                # También buscar en títulos de normativas
+                for normativa in normativas:
+                    titulo_lower = normativa['titulo'].lower()
+                    for palabra_termino in terminos_busqueda:
+                        if len(palabra_termino) > 2 and palabra_termino in titulo_lower:
+                            coincidencias += 1
+                
+                # Si hay coincidencias, agregar las normativas
+                if coincidencias > 0:
+                    for i, normativa in enumerate(normativas, 1):
+                        resultado = {
+                            'numero': len(resultados) + 1,
+                            'titulo': normativa['titulo'],
+                            'descripcion': f"Normativa relacionada con {categoria} - {coincidencias} coincidencias",
+                            'enlace': f"https://www.bcn.cl/leychile/navegar?idNorma={normativa['numero']}",
+                            'numero_ley': normativa['numero'],
+                            'tipo_norma': normativa['tipo'],
+                            'relevancia': 3.0 + (0.1 * coincidencias) + (0.05 * i)
+                        }
+                        resultados.append(resultado)
         
         # Si no hay resultados específicos, buscar en normativas generales más amplias
         if not resultados:

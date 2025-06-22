@@ -23,7 +23,17 @@ def obtener_informacion_proyecto_seia_safe(nombre_empresa: str) -> Dict:
             }
         
         # Intentar diferentes métodos de scraping
-        # Método 1: Scraper por titular (NUEVO - búsqueda específica por titular)
+        # Método 1: Scraper MEJORADO (NUEVO - búsqueda específica y ubicaciones reales)
+        try:
+            from scrapers.seia_mejorado import obtener_informacion_empresa_seia_mejorado
+            result = obtener_informacion_empresa_seia_mejorado(nombre_empresa)
+            if result and result.get('success'):
+                logger.info("✅ Información obtenida con scraper MEJORADO")
+                return result
+        except Exception as e:
+            logger.warning(f"Scraper mejorado falló: {e}")
+        
+        # Método 2: Scraper por titular (búsqueda específica por titular)
         try:
             from scrapers.seia_titular import buscar_proyectos_por_titular
             result = buscar_proyectos_por_titular(nombre_empresa)
@@ -79,7 +89,7 @@ def obtener_informacion_proyecto_seia_safe(nombre_empresa: str) -> Dict:
         except Exception as e:
             logger.warning(f"Scraper por titular falló: {e}")
         
-        # Método 2: Scraper corregido (anterior)
+        # Método 3: Scraper corregido (anterior)
         try:
             from scrapers.seia_correcto import obtener_informacion_empresa_seia_correcto
             result = obtener_informacion_empresa_seia_correcto(nombre_empresa)
@@ -129,7 +139,7 @@ def obtener_informacion_proyecto_seia_safe(nombre_empresa: str) -> Dict:
         except Exception as e:
             logger.warning(f"Scraper corregido falló: {e}")
         
-        # Método 2: Scraper real (anterior)
+        # Método 4: Scraper real (anterior)
         try:
             from scrapers.seia_real import obtener_informacion_proyecto_seia_real
             result = obtener_informacion_proyecto_seia_real(nombre_empresa)
@@ -139,7 +149,7 @@ def obtener_informacion_proyecto_seia_safe(nombre_empresa: str) -> Dict:
         except Exception as e:
             logger.warning(f"Scraper real falló: {e}")
         
-        # Método 3: Scraper completo
+        # Método 5: Scraper completo
         try:
             from scrapers.seia_project_detail_scraper import obtener_informacion_proyecto_seia
             result = obtener_informacion_proyecto_seia(nombre_empresa)
@@ -149,7 +159,7 @@ def obtener_informacion_proyecto_seia_safe(nombre_empresa: str) -> Dict:
         except Exception as e:
             logger.warning(f"Scraper completo falló: {e}")
         
-        # Método 4: Scraper simple
+        # Método 6: Scraper simple
         try:
             from scrapers.seia_simple import obtener_informacion_proyecto_seia_simple
             result = obtener_informacion_proyecto_seia_simple(nombre_empresa)
@@ -159,7 +169,7 @@ def obtener_informacion_proyecto_seia_safe(nombre_empresa: str) -> Dict:
         except Exception as e:
             logger.warning(f"Scraper simple falló: {e}")
         
-        # Método 5: Búsqueda directa básica
+        # Método 7: Búsqueda directa básica
         logger.info("Intentando búsqueda directa básica")
         try:
             import requests
@@ -295,7 +305,7 @@ def obtener_informacion_proyecto_seia_safe(nombre_empresa: str) -> Dict:
         except Exception as e:
             logger.error(f"Error en búsqueda directa: {e}")
         
-        # Método 6: Respuesta de error final
+        # Método 8: Respuesta de error final
         logger.error("Todos los métodos fallaron")
         return {
             'success': False,
